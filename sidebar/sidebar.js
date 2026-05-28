@@ -138,6 +138,9 @@ function renderBank() {
 async function handleClear() {
   if (!confirm('Clear all captured questions? This cannot be undone.')) return;
   await msg('CLEAR_BANK');
+  await msg('SAVE_BLOG_TOPICS', { topics: [] });
+  blogTopics = [];
+  renderBlogList();
   await refreshBank();
 }
 
@@ -218,6 +221,11 @@ async function handleSynthesize() {
 
   // Save synthesis tail so suggest-searches can use the gap analysis
   msg('SAVE_SYNTHESIS', { markdown: lastMarkdown }).catch(() => {});
+
+  // Parse and persist top 10 for blog tab
+  blogTopics = parseBuildTheseFirst(lastMarkdown);
+  msg('SAVE_BLOG_TOPICS', { topics: blogTopics }).catch(() => {});
+  renderBlogList();
 }
 
 // ── Suggest searches ──────────────────────────────────────────────────────────
@@ -262,6 +270,99 @@ function renderSuggestions(listId, queries, platform) {
     li.innerHTML = `<a href="${url}" target="_blank">${escHtml(query)}</a>`;
     list.appendChild(li);
   });
+}
+
+// ── Blog tab ──────────────────────────────────────────────────────────────────
+function parseBuildTheseFirst(markdown) {
+  const lines = markdown.split('\n');
+  const results = [];
+  let inSection = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (/^#{1,3}\s+(build these first|step 6|top 10)/i.test(trimmed) ||
+        /^\*\*(build these first|step 6|top 10)/i.test(trimmed)) { inSection = true; continue; }
+    if (inSection && /^(#{1,3}\s|\*\*)/.test(trimmed)) break;
+    if (!inSection) continue;
+
+    const listMatch = trimmed.match(/^\d+[.)]\s+(.+)/);
+    if (!listMatch) continue;
+
+    let text = listMatch[1].trim().replace(/\*\*/g, '');
+    const questionEnd = text.indexOf('?');
+    if (questionEnd !== -1) {
+      text = text.slice(0, questionEnd + 1);
+    } else {
+      const sentenceEnd = text.indexOf('.');
+      if (sentenceEnd !== -1) text = text.slice(0, sentenceEnd + 1);
+    }
+    if (text) results.push(text.trim());
+  }
+  return results;
+}
+
+let blogTopics = [];
+let lastBlogMarkdown = '';
+
+async function initBlogTab() {
+  const { topics } = await msg('GET_BLOG_TOPICS');
+  if (topics && topics.length > 0) {
+    blogTopics = topics;
+    renderBlogList();
+  }
+}
+
+function renderBlogList() {
+  const list = el('vc-blog-list');
+  const hint = el('vc-blog-hint');
+  list.innerHTML = '';
+
+  if (!blogTopics.length) {
+    hint.classList.remove('hidden');
+    return;
+  }
+  hint.classList.add('hidden');
+
+  blogTopics.forEach((question, i) => {
+    const li = document.createElement('li');
+    li.className = 'vc-blog-card';
+    li.innerHTML = `
+      <span class="vc-blog-card-number">${i + 1}</span>
+      <span class="vc-blog-card-question">${escHtml(question)}</span>
+      <button class="vc-btn-secondary vc-blog-generate-btn" data-index="${i}">Generate post</button>
+    `;
+    list.appendChild(li);
+  });
+
+  list.querySelectorAll('.vc-blog-generate-btn').forEach(btn => {
+    btn.addEventListener('click', () => handleGeneratePost(blogTopics[+btn.dataset.index], btn));
+  });
+}
+
+async function handleGeneratePost(question, btn) {
+  const outputWrap = el('vc-blog-output-wrap');
+  const output = el('vc-blog-output');
+  const allBtns = document.querySelectorAll('.vc-blog-generate-btn');
+
+  btn.textContent = 'Writing…';
+  allBtns.forEach(b => b.disabled = true);
+  outputWrap.classList.remove('hidden');
+  output.textContent = 'Generating blog post… (this may take 30–60 seconds)';
+
+  const result = await msg('GENERATE_BLOG_POST', { question });
+
+  btn.textContent = 'Generate post';
+  allBtns.forEach(b => b.disabled = false);
+
+  if (result.error) {
+    output.textContent = 'Error: ' + result.error;
+    return;
+  }
+
+  lastBlogMarkdown = result.markdown;
+  output.textContent = result.markdown;
+  el('vc-blog-copy-btn').onclick = () => navigator.clipboard.writeText(lastBlogMarkdown);
+  el('vc-blog-pdf-btn').onclick = () => exportPdf(lastBlogMarkdown);
 }
 
 // ── PDF export ────────────────────────────────────────────────────────────────
@@ -404,6 +505,7 @@ async function init() {
 
   await loadSettings();
   await refreshBank();
+  await initBlogTab();
 
   el('vc-search').addEventListener('input', renderBank);
   el('vc-source-filter').addEventListener('change', renderBank);

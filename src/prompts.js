@@ -234,6 +234,65 @@ function parseSuggestions(text) {
   return { reddit, google };
 }
 
+function parseBuildTheseFirst(markdown) {
+  const lines = markdown.split('\n');
+  const results = [];
+  let inSection = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    if (/^#{1,3}\s+(build these first|step 6|top 10)/i.test(trimmed) ||
+        /^\*\*(build these first|step 6|top 10)/i.test(trimmed)) {
+      inSection = true;
+      continue;
+    }
+
+    if (inSection && /^(#{1,3}\s|\*\*)/.test(trimmed)) break;
+    if (!inSection) continue;
+
+    const listMatch = trimmed.match(/^\d+[.)]\s+(.+)/);
+    if (!listMatch) continue;
+
+    let text = listMatch[1].trim().replace(/\*\*/g, '');
+
+    const questionEnd = text.indexOf('?');
+    if (questionEnd !== -1) {
+      text = text.slice(0, questionEnd + 1);
+    } else {
+      const sentenceEnd = text.indexOf('.');
+      if (sentenceEnd !== -1) text = text.slice(0, sentenceEnd + 1);
+    }
+
+    if (text) results.push(text.trim());
+  }
+
+  return results;
+}
+
+function assembleBlogPrompt(question, icp) {
+  return `You are an expert SEO content writer for B2B SaaS.
+
+Write a 900–1200 word blog post targeting the following question as the primary keyword topic:
+
+QUESTION: ${question}
+
+ICP CONTEXT:
+${formatIcp(icp)}
+
+The post must include:
+1. SEO Title (60 chars or under, keyword-first)
+2. Meta Description (under 155 chars, includes a CTA)
+3. Introduction paragraph (hook the reader, state the problem)
+4. 3–4 H2 sections with body copy — practical, specific, no fluff
+5. A closing CTA paragraph mentioning the product by name and price
+
+Tone: confident, practical, peer-to-peer. Write for the buyer described in the ICP context above, not a generic audience.
+Use competitor names naturally where relevant for comparison.
+Do not use dashes of any kind (em dashes, en dashes, hyphens in prose). Rewrite any sentence that would need one.
+Output clean markdown only. No commentary before or after.`;
+}
+
 if (typeof module !== 'undefined') {
-  module.exports = { assemblePrompt, assembleMasterPrompt, formatIcp, assembleSuggestionsPrompt, parseSuggestions };
+  module.exports = { assemblePrompt, assembleMasterPrompt, formatIcp, assembleSuggestionsPrompt, parseSuggestions, parseBuildTheseFirst, assembleBlogPrompt };
 }
