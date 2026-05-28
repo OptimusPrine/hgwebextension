@@ -142,16 +142,16 @@ async function handleClear() {
 
 // ── Source item labels ────────────────────────────────────────────────────────
 const SOURCE_LABELS = {
-  reddit:   'comments',
-  google:   'PAA questions',
-  g2:       'reviews',
-  capterra: 'reviews',
-  youtube:  'comments',
+  reddit:   { one: 'post section', many: 'post + comments' },
+  google:   { one: 'PAA question', many: 'PAA questions' },
+  g2:       { one: 'review',       many: 'reviews' },
+  capterra: { one: 'review',       many: 'reviews' },
+  youtube:  { one: 'comment',      many: 'comments' },
 };
 
 function itemLabel(source, count) {
-  const noun = SOURCE_LABELS[source] || 'items';
-  return `${count} ${noun}`;
+  const label = SOURCE_LABELS[source] || { one: 'item', many: 'items' };
+  return `${count} ${count === 1 ? label.one : label.many}`;
 }
 
 // ── Capture ───────────────────────────────────────────────────────────────────

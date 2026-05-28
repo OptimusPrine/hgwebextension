@@ -1,25 +1,22 @@
 <!DOCTYPE html>
 <html>
 <body>
-  <div data-testid="post-container">
-    <h1 data-testid="post-title">Best software for managing multiple martial arts locations?</h1>
-    <div data-testid="post-rtjson-content">
+  <!-- shreddit-style post (newest Reddit, 2024+) -->
+  <shreddit-post>
+    <h1 slot="title">Best software for managing multiple martial arts locations?</h1>
+    <div slot="text-body">
       <p>Running 3 dojos and the spreadsheet system is completely breaking down. Looking for recommendations on studio management software. Budget is around $150-200/month. Anyone have experience with MindBody vs alternatives?</p>
     </div>
-  </div>
-  <div data-testid="comments-page-start">
-    <div data-testid="comment-0">
-      <div data-testid="comment-top-meta">u/user1</div>
-      <div data-testid="comment">We switched from MindBody 6 months ago, biggest pain was the contract length and price creep</div>
-    </div>
-    <div data-testid="comment-1">
-      <div data-testid="comment-top-meta">u/user2</div>
-      <div data-testid="comment">Does it handle belt rank tracking and attendance in one place?</div>
-    </div>
-    <div data-testid="comment-2">
-      <div data-testid="comment-top-meta">u/user3</div>
-      <div data-testid="comment">The automated billing reminders alone are worth it</div>
-    </div>
-  </div>
+  </shreddit-post>
+
+  <shreddit-comment thingid="t1_abc1">
+    <p>We switched from MindBody 6 months ago, biggest pain was the contract length and price creep</p>
+  </shreddit-comment>
+  <shreddit-comment thingid="t1_abc2">
+    <p>Does it handle belt rank tracking and attendance in one place?</p>
+  </shreddit-comment>
+  <shreddit-comment thingid="t1_abc3">
+    <p>The automated billing reminders alone are worth it for our dojo</p>
+  </shreddit-comment>
 </body>
 </html>
