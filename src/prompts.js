@@ -289,6 +289,7 @@ The post must include:
 
 Tone: confident, practical, peer-to-peer. Write for the buyer described in the ICP context above, not a generic audience.
 Use competitor names naturally where relevant for comparison.
+Do not use dashes of any kind (em dashes, en dashes, hyphens in prose). Rewrite any sentence that would need one.
 Output clean markdown only. No commentary before or after.`;
 }
 
