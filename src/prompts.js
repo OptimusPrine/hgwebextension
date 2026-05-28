@@ -178,6 +178,62 @@ function assembleMasterPrompt(questions, icp) {
     .replace('{{QUESTIONS}}', questionList);
 }
 
+function assembleSuggestionsPrompt(questions, icp, lastSynthesisSnippet) {
+  const icpText = formatIcp(icp);
+  const sample = questions.slice(-25).map((q, i) => `${i + 1}. ${q}`).join('\n');
+  const gapContext = lastSynthesisSnippet
+    ? `\nContext from the last synthesis (pay attention to the GAPS section):\n"""\n${lastSynthesisSnippet}\n"""\n`
+    : '';
+
+  return `You are a marketing research strategist helping build a Buyer-Question Map.
+
+ICP:
+${icpText}
+${gapContext}
+Current questions already captured (most recent ${questions.length <= 25 ? questions.length : 25} shown):
+${sample}
+
+Based on the above, suggest the most valuable search queries to run NEXT — prioritising journey stages that appear underrepresented.
+
+Return exactly this format (no extra commentary):
+
+REDDIT:
+1. [specific search query — include subreddit if relevant]
+2. [specific search query]
+3. [specific search query]
+4. [specific search query]
+5. [specific search query]
+
+GOOGLE:
+1. [specific search query]
+2. [specific search query]
+3. [specific search query]
+4. [specific search query]
+5. [specific search query]
+
+Be specific. Use real competitor names. Use the language buyers actually use.`;
+}
+
+function parseSuggestions(text) {
+  const reddit = [];
+  const google = [];
+  let current = null;
+
+  for (const line of text.split('\n')) {
+    const trimmed = line.trim();
+    if (/^REDDIT[:\s]/i.test(trimmed)) { current = 'reddit'; continue; }
+    if (/^GOOGLE[:\s]/i.test(trimmed)) { current = 'google'; continue; }
+
+    const match = trimmed.match(/^\d+[.)]\s*(.+)/);
+    if (!match) continue;
+    const query = match[1].trim();
+    if (current === 'reddit') reddit.push(query);
+    if (current === 'google') google.push(query);
+  }
+
+  return { reddit, google };
+}
+
 if (typeof module !== 'undefined') {
-  module.exports = { assemblePrompt, assembleMasterPrompt, formatIcp };
+  module.exports = { assemblePrompt, assembleMasterPrompt, formatIcp, assembleSuggestionsPrompt, parseSuggestions };
 }

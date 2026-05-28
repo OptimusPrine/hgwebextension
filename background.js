@@ -1,5 +1,7 @@
 importScripts('src/questionbank.js', 'src/prompts.js', 'src/ai.js');
 
+const LAST_SYNTHESIS_KEY = 'lastSynthesis';
+
 const SETTINGS_KEY = 'settings';
 
 async function getSettings() {
@@ -102,6 +104,37 @@ async function handleMessage(message, sender) {
     case 'CLEAR_BANK': {
       await clearBank();
       return { ok: true };
+    }
+
+    case 'SAVE_SYNTHESIS': {
+      // Store the tail of the synthesis — the gaps section lives there
+      const snippet = (message.markdown || '').slice(-1500);
+      await chrome.storage.local.set({ [LAST_SYNTHESIS_KEY]: snippet });
+      return { ok: true };
+    }
+
+    case 'SUGGEST_SEARCHES_REQUESTED': {
+      const settings = await getSettings();
+      const hasKey = settings.provider === 'openai' ? settings.openaiApiKey : settings.apiKey;
+      if (!hasKey) {
+        const which = settings.provider === 'openai' ? 'OpenAI' : 'Claude';
+        return { error: `No ${which} API key set.` };
+      }
+
+      const allQuestions = await getAllQuestions();
+      if (allQuestions.length === 0) {
+        return { error: 'No questions in bank yet. Capture some content first.' };
+      }
+
+      const stored = await chrome.storage.local.get(LAST_SYNTHESIS_KEY);
+      const lastSynthesis = stored[LAST_SYNTHESIS_KEY] || '';
+
+      const questionTexts = allQuestions.map(q => q.text);
+      const prompt = assembleSuggestionsPrompt(questionTexts, settings.icp || {}, lastSynthesis);
+      const text = await synthesize(prompt, settings);
+      const suggestions = parseSuggestions(text);
+
+      return { suggestions };
     }
 
     default:

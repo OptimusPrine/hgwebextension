@@ -29,6 +29,25 @@
         <span class="vc-stat-label">Bank total</span>
         <span class="vc-stat-value" id="vc-count">0</span>
       </div>
+
+      <div class="vc-suggest-wrap hidden" id="vc-suggest-wrap">
+        <button class="vc-btn-secondary" id="vc-suggest-btn">Suggest searches</button>
+        <div class="vc-suggest-results hidden" id="vc-suggest-results">
+          <div class="vc-suggest-group" id="vc-suggest-reddit">
+            <div class="vc-suggest-header">
+              <span class="vc-platform-tag reddit">Reddit</span>
+            </div>
+            <ul class="vc-suggest-list" id="vc-reddit-list"></ul>
+          </div>
+          <div class="vc-suggest-group" id="vc-suggest-google">
+            <div class="vc-suggest-header">
+              <span class="vc-platform-tag google">Google</span>
+            </div>
+            <ul class="vc-suggest-list" id="vc-google-list"></ul>
+          </div>
+        </div>
+        <div class="vc-suggest-error hidden" id="vc-suggest-error"></div>
+      </div>
     </div>
 
     <div class="vc-pane hidden" data-pane="bank">

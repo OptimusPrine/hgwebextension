@@ -353,6 +353,44 @@ body { background: var(--bg); color: var(--text); transition: background 0.2s, c
   gap: 8px;
 }
 
+/* ── Suggested searches ───────────────────────────────────── */
+.vc-suggest-wrap { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--stat-border); padding-top: 10px; }
+
+.vc-suggest-results { display: flex; flex-direction: column; gap: 10px; }
+
+.vc-suggest-group { display: flex; flex-direction: column; gap: 4px; }
+
+.vc-suggest-header { display: flex; align-items: center; gap: 6px; }
+
+.vc-platform-tag {
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  text-transform: uppercase;
+}
+.vc-platform-tag.reddit  { background: #ff4500; color: #fff; }
+.vc-platform-tag.google  { background: #4285f4; color: #fff; }
+
+.vc-suggest-list { list-style: none; display: flex; flex-direction: column; gap: 3px; }
+
+.vc-suggest-list li a {
+  color: var(--text);
+  display: block;
+  font-size: 11px;
+  line-height: 1.4;
+  padding: 5px 8px;
+  border-radius: 5px;
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
+  text-decoration: none;
+  transition: border-color 0.1s, background 0.1s;
+}
+.vc-suggest-list li a:hover { border-color: var(--input-focus); background: var(--badge-bg); }
+
+.vc-suggest-error { color: var(--feedback-error); font-size: 11px; }
+
 /* ── Provider toggle ──────────────────────────────────────── */
 .vc-provider-toggle {
   display: flex;

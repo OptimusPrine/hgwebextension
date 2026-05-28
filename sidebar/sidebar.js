@@ -105,6 +105,7 @@ async function refreshBank() {
 function updateCount(count) {
   if (el('vc-count')) el('vc-count').textContent = count;
   if (el('vc-bank-count')) el('vc-bank-count').textContent = count;
+  el('vc-suggest-wrap')?.classList.toggle('hidden', count === 0);
 }
 
 function renderBank() {
@@ -214,6 +215,53 @@ async function handleSynthesize() {
   exportRow.classList.remove('hidden');
   el('vc-copy-btn').onclick = () => navigator.clipboard.writeText(lastMarkdown);
   el('vc-pdf-btn').onclick = () => exportPdf(lastMarkdown);
+
+  // Save synthesis tail so suggest-searches can use the gap analysis
+  msg('SAVE_SYNTHESIS', { markdown: lastMarkdown }).catch(() => {});
+}
+
+// ── Suggest searches ──────────────────────────────────────────────────────────
+async function handleSuggestSearches() {
+  const btn = el('vc-suggest-btn');
+  const results = el('vc-suggest-results');
+  const errEl = el('vc-suggest-error');
+
+  btn.textContent = 'Thinking…';
+  btn.disabled = true;
+  results.classList.add('hidden');
+  errEl.classList.add('hidden');
+
+  const result = await msg('SUGGEST_SEARCHES_REQUESTED');
+
+  btn.textContent = 'Suggest searches';
+  btn.disabled = false;
+
+  if (result.error) {
+    errEl.textContent = result.error;
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  renderSuggestions('vc-reddit-list', result.suggestions.reddit, 'reddit');
+  renderSuggestions('vc-google-list', result.suggestions.google, 'google');
+  results.classList.remove('hidden');
+}
+
+function renderSuggestions(listId, queries, platform) {
+  const list = el(listId);
+  list.innerHTML = '';
+  if (!queries.length) {
+    list.innerHTML = '<li style="color:var(--muted);font-size:11px;padding:4px 0">No suggestions returned.</li>';
+    return;
+  }
+  queries.forEach(query => {
+    const url = platform === 'reddit'
+      ? `https://www.reddit.com/search/?q=${encodeURIComponent(query)}`
+      : `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+    const li = document.createElement('li');
+    li.innerHTML = `<a href="${url}" target="_blank">${escHtml(query)}</a>`;
+    list.appendChild(li);
+  });
 }
 
 // ── PDF export ────────────────────────────────────────────────────────────────
@@ -361,6 +409,7 @@ async function init() {
   el('vc-source-filter').addEventListener('change', renderBank);
 
   el('vc-capture-btn').addEventListener('click', handleCapture);
+  el('vc-suggest-btn').addEventListener('click', handleSuggestSearches);
   el('vc-synth-btn').addEventListener('click', handleSynthesize);
   el('vc-save-btn').addEventListener('click', handleSave);
   el('vc-clear-btn').addEventListener('click', handleClear);
