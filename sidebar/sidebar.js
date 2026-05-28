@@ -273,32 +273,54 @@ function renderSuggestions(listId, queries, platform) {
 }
 
 // ── Blog tab ──────────────────────────────────────────────────────────────────
+function extractListItem(raw) {
+  let text = raw.trim().replace(/\*\*/g, '');
+  const q = text.indexOf('?');
+  if (q !== -1) return text.slice(0, q + 1).trim();
+  const p = text.indexOf('.');
+  if (p !== -1) return text.slice(0, p + 1).trim();
+  return text.trim();
+}
+
 function parseBuildTheseFirst(markdown) {
   const lines = markdown.split('\n');
-  const results = [];
+  const headingRe = /^(#{1,3}\s+|\*\*)(build these first|step 6|top 10)/i;
+  let headingFound = false;
+  let results = [];
   let inSection = false;
 
   for (const line of lines) {
     const trimmed = line.trim();
-    if (/^#{1,3}\s+(build these first|step 6|top 10)/i.test(trimmed) ||
-        /^\*\*(build these first|step 6|top 10)/i.test(trimmed)) { inSection = true; continue; }
-    if (inSection && /^(#{1,3}\s|\*\*)/.test(trimmed)) break;
+    if (headingRe.test(trimmed)) { inSection = true; headingFound = true; continue; }
+    if (inSection && /^(#{1,3}\s|\*\*\S)/.test(trimmed)) break;
     if (!inSection) continue;
-
-    const listMatch = trimmed.match(/^\d+[.)]\s+(.+)/);
-    if (!listMatch) continue;
-
-    let text = listMatch[1].trim().replace(/\*\*/g, '');
-    const questionEnd = text.indexOf('?');
-    if (questionEnd !== -1) {
-      text = text.slice(0, questionEnd + 1);
-    } else {
-      const sentenceEnd = text.indexOf('.');
-      if (sentenceEnd !== -1) text = text.slice(0, sentenceEnd + 1);
-    }
-    if (text) results.push(text.trim());
+    const m = trimmed.match(/^\d+[.)]\s+(.+)/);
+    if (!m) continue;
+    const text = extractListItem(m[1]);
+    if (text) results.push(text);
   }
-  return results;
+
+  if (headingFound) return results;
+
+  // Fallback: top-10 is always the last multi-item numbered list in the doc
+  let currentList = [];
+  let lastNum = 0;
+  let bestList = [];
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const m = trimmed.match(/^(\d+)[.)]\s+(.+)/);
+    if (!m) continue;
+    const num = parseInt(m[1], 10);
+    if (num === 1) { currentList = []; lastNum = 0; }
+    if (num !== lastNum + 1) continue;
+    lastNum = num;
+    const text = extractListItem(m[2]);
+    if (text) currentList.push(text);
+    if (currentList.length >= 5) bestList = [...currentList];
+  }
+
+  return bestList;
 }
 
 let blogTopics = [];

@@ -178,6 +178,14 @@ test('parseBuildTheseFirst works with STEP 6 heading (actual AI output format)',
   expect(result[1]).toBe('Is there a trial period to test Rolliance?');
 });
 
+test('parseBuildTheseFirst falls back to last numbered list when heading is unrecognised', () => {
+  const md = `## Journey Stages\n\n| 1 | Some question | Info |\n| 2 | Another | Info |\n\n## Whatever Heading The AI Chose\n\n1. How do I manage my studio?\n   Rationale: important.\n2. Is there a free trial?\n   Rationale: transactional.\n3. What does pricing include?\n   Rationale: cost concern.\n4. How does billing work?\n   Rationale: key concern.\n5. Can I track belt progressions?\n   Rationale: niche need.\n\n## Gaps\n\nUnaware stage is thin.`;
+  const result = parseBuildTheseFirst(md);
+
+  expect(result.length).toBeGreaterThanOrEqual(5);
+  expect(result[0]).toBe('How do I manage my studio?');
+});
+
 // ── assembleBlogPrompt ───────────────────────────────────────────────────────
 
 test('assembleBlogPrompt contains the question text', () => {
