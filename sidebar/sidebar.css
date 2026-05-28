@@ -341,6 +341,12 @@ body { background: var(--bg); color: var(--text); transition: background 0.2s, c
 
 .vc-saved { color: var(--saved-fg); font-size: 12px; }
 
+/* ── Export row ───────────────────────────────────────────── */
+.vc-export-row {
+  display: flex;
+  gap: 8px;
+}
+
 /* ── Provider toggle ──────────────────────────────────────── */
 .vc-provider-toggle {
   display: flex;
