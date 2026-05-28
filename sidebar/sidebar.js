@@ -140,6 +140,20 @@ async function handleClear() {
   await refreshBank();
 }
 
+// ── Source item labels ────────────────────────────────────────────────────────
+const SOURCE_LABELS = {
+  reddit:   'comments',
+  google:   'PAA questions',
+  g2:       'reviews',
+  capterra: 'reviews',
+  youtube:  'comments',
+};
+
+function itemLabel(source, count) {
+  const noun = SOURCE_LABELS[source] || 'items';
+  return `${count} ${noun}`;
+}
+
 // ── Capture ───────────────────────────────────────────────────────────────────
 function updateSiteBadge(source) {
   const badge = el('vc-site-badge');
@@ -159,20 +173,23 @@ function updateSiteBadge(source) {
 
 async function handleCapture() {
   const feedback = el('vc-feedback');
-  feedback.textContent = 'Capturing…';
-  feedback.className = 'vc-feedback';
+  setFeedback(feedback, 'Scanning page…', 'scanning');
 
   const result = await msg('CAPTURE_REQUESTED');
 
   if (result.error) {
-    feedback.textContent = result.error;
-    feedback.className = 'vc-feedback error';
+    setFeedback(feedback, result.error, 'error');
     return;
   }
 
-  feedback.textContent = `✓ ${result.count} questions added`;
-  feedback.className = 'vc-feedback success';
+  const scannedLabel = itemLabel(result.source, result.scanned);
+  setFeedback(feedback, `✓ ${result.count} questions extracted from ${scannedLabel}`, 'success');
   await refreshBank();
+}
+
+function setFeedback(el, text, state) {
+  el.textContent = text;
+  el.className = `vc-feedback${state ? ' ' + state : ''}`;
 }
 
 // ── Synthesize ────────────────────────────────────────────────────────────────
@@ -319,9 +336,16 @@ function escHtml(text) {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-// ── Listen for site detection from content scripts ────────────────────────────
+// ── Listen for messages from background / content scripts ─────────────────────
 chrome.runtime.onMessage.addListener((message) => {
-  if (message.type === 'SITE_DETECTED') updateSiteBadge(message.source);
+  if (message.type === 'SITE_DETECTED') {
+    updateSiteBadge(message.source);
+  }
+  if (message.type === 'CAPTURE_PROGRESS') {
+    const feedback = el('vc-feedback');
+    const scannedLabel = itemLabel(message.source, message.scanned);
+    setFeedback(feedback, `Found ${scannedLabel} — extracting questions…`, 'scanning');
+  }
 });
 
 // ── Boot ──────────────────────────────────────────────────────────────────────

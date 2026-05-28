@@ -25,7 +25,7 @@ if (typeof chrome !== 'undefined' && chrome.runtime && !window.__bqmGoogleRegist
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message.type === 'CAPTURE_REQUESTED') {
       const content = scrapeGooglePAA(document);
-      sendResponse({ type: 'CONTENT_SCRAPED', source: 'google', content });
+      sendResponse({ type: 'CONTENT_SCRAPED', source: 'google', content, scanned: content.questions.length });
     }
     return true;
   });

@@ -39,7 +39,11 @@ async function handleMessage(message, sender) {
         return { error: contentResponse?.message || 'No response from page. Try refreshing.' };
       }
 
-      const { source, content } = contentResponse;
+      const { source, content, scanned = 0 } = contentResponse;
+
+      // Notify sidebar of scan count before the (slow) API call
+      chrome.runtime.sendMessage({ type: 'CAPTURE_PROGRESS', source, scanned }).catch(() => {});
+
       const settings = await getSettings();
 
       const hasKey = settings.provider === 'openai' ? settings.openaiApiKey : settings.apiKey;
@@ -59,7 +63,7 @@ async function handleMessage(message, sender) {
         await addQuestions(questions, source);
       }
 
-      return { questions, count: questions.length };
+      return { questions, count: questions.length, scanned, source };
     }
 
     case 'SYNTHESIZE_REQUESTED': {

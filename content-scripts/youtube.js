@@ -34,6 +34,7 @@ if (typeof chrome !== 'undefined' && chrome.runtime && !window.__bqmYoutubeRegis
         type: 'CONTENT_SCRAPED',
         source: 'youtube',
         content: { text: formatForCapture(scraped) },
+        scanned: scraped.comments.length,
       });
     }
     return true;

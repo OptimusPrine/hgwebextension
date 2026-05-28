@@ -245,8 +245,14 @@ body { background: var(--bg); color: var(--text); transition: background 0.2s, c
 
 /* ── Feedback ─────────────────────────────────────────────── */
 .vc-feedback { color: var(--muted); font-size: 11px; min-height: 16px; }
-.vc-feedback.error   { color: var(--feedback-error); }
-.vc-feedback.success { color: var(--feedback-success); }
+.vc-feedback.error    { color: var(--feedback-error); }
+.vc-feedback.success  { color: var(--feedback-success); }
+.vc-feedback.scanning { color: var(--muted); animation: vc-pulse 1.4s ease-in-out infinite; }
+
+@keyframes vc-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
 
 /* ── Stat row ─────────────────────────────────────────────── */
 .vc-stat-row {

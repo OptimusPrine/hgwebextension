@@ -41,7 +41,8 @@ if (typeof chrome !== 'undefined' && chrome.runtime && !window.__bqmRedditRegist
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message.type === 'CAPTURE_REQUESTED') {
       const content = scrapeReddit(document);
-      sendResponse({ type: 'CONTENT_SCRAPED', source: 'reddit', content });
+      const scanned = content.comments.length + (content.body ? 1 : 0);
+      sendResponse({ type: 'CONTENT_SCRAPED', source: 'reddit', content, scanned });
     }
     return true;
   });

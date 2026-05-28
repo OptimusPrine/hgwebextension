@@ -40,6 +40,7 @@ if (typeof chrome !== 'undefined' && chrome.runtime && !window.__bqmG2Registered
         type: 'CONTENT_SCRAPED',
         source: 'g2',
         content: { text: formatForCapture(scraped) },
+        scanned: scraped.reviews.length,
       });
     }
     return true;

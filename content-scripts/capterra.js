@@ -30,6 +30,7 @@ if (typeof chrome !== 'undefined' && chrome.runtime && !window.__bqmCapterraRegi
         type: 'CONTENT_SCRAPED',
         source: 'capterra',
         content: { text: formatForCapture(scraped) },
+        scanned: scraped.reviews.length,
       });
     }
     return true;
