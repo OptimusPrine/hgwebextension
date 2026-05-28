@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buyer-Question Map</title>
+  <link rel="stylesheet" href="sidebar.css">
+</head>
+<body>
+
+<div id="var-c" class="var-c">
+  <nav class="vc-rail">
+    <button class="vc-rail-btn active" data-tab="capture" title="Capture">⊕</button>
+    <button class="vc-rail-btn" data-tab="bank" title="Question Bank">≡</button>
+    <button class="vc-rail-btn" data-tab="synthesize" title="Synthesize">⚡</button>
+    <button class="vc-rail-btn vc-rail-bottom" id="vc-dark-toggle" title="Toggle dark mode">☀</button>
+    <button class="vc-rail-btn" data-tab="settings" title="Settings">⚙</button>
+  </nav>
+
+  <main class="vc-content">
+    <div class="vc-pane" data-pane="capture">
+      <h2 class="vc-title">Capture</h2>
+      <div class="vc-detect-row">
+        <div class="vc-detect-badge" id="vc-site-badge">No site detected</div>
+      </div>
+      <button class="vc-btn-primary" id="vc-capture-btn" disabled>Capture</button>
+      <div class="vc-feedback" id="vc-feedback"></div>
+      <div class="vc-stat-row">
+        <span class="vc-stat-label">Bank total</span>
+        <span class="vc-stat-value" id="vc-count">0</span>
+      </div>
+    </div>
+
+    <div class="vc-pane hidden" data-pane="bank">
+      <h2 class="vc-title">Question Bank</h2>
+      <div class="vc-filter-row">
+        <input type="text" class="vc-search" id="vc-search" placeholder="Filter...">
+        <select class="vc-select" id="vc-source-filter">
+          <option value="">All sources</option>
+          <option value="reddit">Reddit</option>
+          <option value="google">Google</option>
+          <option value="g2">G2</option>
+          <option value="capterra">Capterra</option>
+          <option value="youtube">YouTube</option>
+        </select>
+        <button class="vc-btn-danger" id="vc-clear-btn">Clear</button>
+      </div>
+      <ul class="vc-list" id="vc-question-list"></ul>
+    </div>
+
+    <div class="vc-pane hidden" data-pane="synthesize">
+      <h2 class="vc-title">Synthesize</h2>
+      <p class="vc-hint"><span id="vc-bank-count">0</span> questions ready to map.</p>
+      <button class="vc-btn-primary" id="vc-synth-btn">Run Master Prompt</button>
+      <button class="vc-btn-secondary hidden" id="vc-copy-btn">Copy Markdown</button>
+      <pre class="vc-output hidden" id="vc-output"></pre>
+    </div>
+
+    <div class="vc-pane hidden" data-pane="settings">
+      <h2 class="vc-title">Settings</h2>
+      <label class="vc-label">Claude API Key</label>
+      <input type="password" class="vc-input" id="vc-apikey" placeholder="sk-ant-...">
+
+      <label class="vc-label">Product Name</label>
+      <input type="text" class="vc-input" id="vc-product" placeholder="Rolliance">
+
+      <label class="vc-label">Description</label>
+      <input type="text" class="vc-input" id="vc-description" placeholder="Martial arts studio management SaaS">
+
+      <label class="vc-label">Price</label>
+      <input type="text" class="vc-input" id="vc-price" placeholder="$169/month">
+
+      <label class="vc-label">Competitors (comma-separated)</label>
+      <input type="text" class="vc-input" id="vc-competitors" placeholder="MindBody, ZenPlanner, Gymdesk">
+
+      <button class="vc-btn-primary" id="vc-save-btn">Save Settings</button>
+      <span class="vc-saved hidden" id="vc-saved">✓ Saved</span>
+    </div>
+  </main>
+</div>
+
+<script src="sidebar.js"></script>
+</body>
+</html>

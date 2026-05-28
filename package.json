@@ -1,0 +1,27 @@
+{
+  "name": "buyer-question-map",
+  "version": "1.0.0",
+  "description": "Browser extension to automate the Buyer-Question Map research workflow",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0"
+  },
+  "jest": {
+    "projects": [
+      {
+        "displayName": "node",
+        "testEnvironment": "node",
+        "testMatch": ["**/tests/*.test.js"]
+      },
+      {
+        "displayName": "jsdom",
+        "testEnvironment": "jsdom",
+        "testMatch": ["**/tests/scrapers/*.test.js"]
+      }
+    ]
+  }
+}

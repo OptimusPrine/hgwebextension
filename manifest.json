@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "name": "Buyer-Question Map",
+  "version": "1.0.0",
+  "description": "Automate buyer research: capture questions from Reddit, Google, G2, and more into a journey-stage map.",
+  "permissions": ["storage", "sidePanel", "activeTab", "scripting"],
+  "host_permissions": ["https://api.anthropic.com/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "side_panel": {
+    "default_path": "sidebar/sidebar.html"
+  },
+  "action": {
+    "default_title": "Open Buyer-Question Map"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.reddit.com/*"],
+      "js": ["content-scripts/reddit.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://www.google.com/search*"],
+      "js": ["content-scripts/google.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://www.g2.com/products/*/reviews*"],
+      "js": ["content-scripts/g2.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://www.capterra.com/*/reviews*"],
+      "js": ["content-scripts/capterra.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://www.youtube.com/watch*"],
+      "js": ["content-scripts/youtube.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
