@@ -12,6 +12,12 @@ const ERROR_MESSAGES = {
   529: 'API is overloaded. Try again in a few seconds.',
 };
 
+function extractApiErrorMessage(data) {
+  // Anthropic: { error: { message: '...' } }
+  // OpenAI:    { error: { message: '...' } }
+  return data?.error?.message || null;
+}
+
 async function callClaude(prompt, apiKey, model) {
   const response = await fetch(CLAUDE_URL, {
     method: 'POST',
@@ -28,7 +34,10 @@ async function callClaude(prompt, apiKey, model) {
   });
 
   if (!response.ok) {
-    throw new Error(ERROR_MESSAGES[response.status] || `Claude API error (${response.status}).`);
+    const data = await response.json().catch(() => ({}));
+    const apiMsg = extractApiErrorMessage(data);
+    const fallback = ERROR_MESSAGES[response.status] || `Claude API error (${response.status}).`;
+    throw new Error(apiMsg || fallback);
   }
 
   const data = await response.json();
@@ -50,7 +59,10 @@ async function callOpenAI(prompt, apiKey, model) {
   });
 
   if (!response.ok) {
-    throw new Error(ERROR_MESSAGES[response.status] || `OpenAI API error (${response.status}).`);
+    const data = await response.json().catch(() => ({}));
+    const apiMsg = extractApiErrorMessage(data);
+    const fallback = ERROR_MESSAGES[response.status] || `OpenAI API error (${response.status}).`;
+    throw new Error(apiMsg || fallback);
   }
 
   const data = await response.json();
