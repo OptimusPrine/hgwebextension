@@ -169,6 +169,15 @@ test('parseBuildTheseFirst works with ### heading variant', () => {
   expect(result[0]).toBe('Does Rolliance integrate with Stripe?');
 });
 
+test('parseBuildTheseFirst works with STEP 6 heading (actual AI output format)', () => {
+  const md = `### STEP 6 — TOP 10 LIST\n\n1. How do I effectively manage my martial arts studio?  \n   *Rationale: Central concern for all prospects.*\n\n2. Is there a trial period to test Rolliance?  \n   *Rationale: High transactional intent.*\n\n### STEP 7 — GAPS\n\nSome gap text.`;
+  const result = parseBuildTheseFirst(md);
+
+  expect(result).toHaveLength(2);
+  expect(result[0]).toBe('How do I effectively manage my martial arts studio?');
+  expect(result[1]).toBe('Is there a trial period to test Rolliance?');
+});
+
 // ── assembleBlogPrompt ───────────────────────────────────────────────────────
 
 test('assembleBlogPrompt contains the question text', () => {

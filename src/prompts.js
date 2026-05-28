@@ -242,12 +242,13 @@ function parseBuildTheseFirst(markdown) {
   for (const line of lines) {
     const trimmed = line.trim();
 
-    if (/^#{1,3}\s+build these first/i.test(trimmed)) {
+    if (/^#{1,3}\s+(build these first|step 6|top 10)/i.test(trimmed) ||
+        /^\*\*(build these first|step 6|top 10)/i.test(trimmed)) {
       inSection = true;
       continue;
     }
 
-    if (inSection && /^#{1,3}\s/.test(trimmed)) break;
+    if (inSection && /^(#{1,3}\s|\*\*)/.test(trimmed)) break;
     if (!inSection) continue;
 
     const listMatch = trimmed.match(/^\d+[.)]\s+(.+)/);
