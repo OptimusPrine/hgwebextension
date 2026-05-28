@@ -37,10 +37,33 @@ function applyDark(on) {
 }
 
 // ── Settings ─────────────────────────────────────────────────────────────────
+function initProviderToggle() {
+  const btns = document.querySelectorAll('.vc-provider-btn');
+  btns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      btns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+}
+
+function getSelectedProvider() {
+  const active = document.querySelector('.vc-provider-btn.active');
+  return active?.dataset.provider || 'claude';
+}
+
+function setSelectedProvider(provider) {
+  document.querySelectorAll('.vc-provider-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.provider === provider);
+  });
+}
+
 async function loadSettings() {
   const settings = await msg('GET_SETTINGS');
   const icp = settings.icp || {};
+  setSelectedProvider(settings.provider || 'claude');
   setVal('vc-apikey', settings.apiKey);
+  setVal('vc-openai-apikey', settings.openaiApiKey);
   setVal('vc-product', icp.product);
   setVal('vc-description', icp.description);
   setVal('vc-price', icp.price);
@@ -50,7 +73,9 @@ async function loadSettings() {
 function readSettings() {
   const competitors = (get('vc-competitors') || '').split(',').map(s => s.trim()).filter(Boolean);
   return {
+    provider: getSelectedProvider(),
     apiKey: get('vc-apikey'),
+    openaiApiKey: get('vc-openai-apikey'),
     icp: {
       product: get('vc-product'),
       description: get('vc-description'),
@@ -187,6 +212,7 @@ chrome.runtime.onMessage.addListener((message) => {
 async function init() {
   initTabs();
   initDarkMode();
+  initProviderToggle();
 
   await loadSettings();
   await refreshBank();

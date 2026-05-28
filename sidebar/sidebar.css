@@ -340,3 +340,28 @@ body { background: var(--bg); color: var(--text); transition: background 0.2s, c
 .vc-input:focus { border-color: var(--input-focus); outline: none; }
 
 .vc-saved { color: var(--saved-fg); font-size: 12px; }
+
+/* ── Provider toggle ──────────────────────────────────────── */
+.vc-provider-toggle {
+  display: flex;
+  background: var(--badge-bg);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+  width: fit-content;
+}
+.vc-provider-btn {
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 14px;
+  transition: background 0.15s, color 0.15s;
+}
+.vc-provider-btn.active {
+  background: var(--btn-primary-bg);
+  color: #fff;
+}

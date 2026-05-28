@@ -58,8 +58,18 @@
 
     <div class="vc-pane hidden" data-pane="settings">
       <h2 class="vc-title">Settings</h2>
+
+      <label class="vc-label">AI Provider</label>
+      <div class="vc-provider-toggle" id="vc-provider-toggle">
+        <button class="vc-provider-btn active" data-provider="claude">Claude</button>
+        <button class="vc-provider-btn" data-provider="openai">OpenAI</button>
+      </div>
+
       <label class="vc-label">Claude API Key</label>
       <input type="password" class="vc-input" id="vc-apikey" placeholder="sk-ant-...">
+
+      <label class="vc-label">OpenAI API Key</label>
+      <input type="password" class="vc-input" id="vc-openai-apikey" placeholder="sk-...">
 
       <label class="vc-label">Product Name</label>
       <input type="text" class="vc-input" id="vc-product" placeholder="Rolliance">

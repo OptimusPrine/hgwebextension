@@ -1,4 +1,4 @@
-importScripts('src/questionbank.js', 'src/prompts.js', 'src/claude.js');
+importScripts('src/questionbank.js', 'src/prompts.js', 'src/ai.js');
 
 const SETTINGS_KEY = 'settings';
 
@@ -42,8 +42,10 @@ async function handleMessage(message, sender) {
       const { source, content } = contentResponse;
       const settings = await getSettings();
 
-      if (!settings.apiKey) {
-        return { error: 'No API key set. Please add your Claude API key in Settings.' };
+      const hasKey = settings.provider === 'openai' ? settings.openaiApiKey : settings.apiKey;
+      if (!hasKey) {
+        const which = settings.provider === 'openai' ? 'OpenAI' : 'Claude';
+        return { error: `No ${which} API key set. Please add it in Settings.` };
       }
 
       const rawText = typeof content === 'string' ? content
@@ -52,7 +54,7 @@ async function handleMessage(message, sender) {
       const prompt = assemblePrompt(source, rawText, settings.icp || {});
       if (!prompt) return { error: `Source "${source}" not supported.` };
 
-      const questions = await extractQuestions(prompt, settings.apiKey);
+      const questions = await extractQuestions(prompt, settings);
       if (questions.length > 0) {
         await addQuestions(questions, source);
       }
@@ -62,8 +64,10 @@ async function handleMessage(message, sender) {
 
     case 'SYNTHESIZE_REQUESTED': {
       const settings = await getSettings();
-      if (!settings.apiKey) {
-        return { error: 'No API key set.' };
+      const hasKey = settings.provider === 'openai' ? settings.openaiApiKey : settings.apiKey;
+      if (!hasKey) {
+        const which = settings.provider === 'openai' ? 'OpenAI' : 'Claude';
+        return { error: `No ${which} API key set.` };
       }
 
       const allQuestions = await getAllQuestions();
@@ -73,7 +77,7 @@ async function handleMessage(message, sender) {
 
       const questionTexts = allQuestions.map(q => q.text);
       const prompt = assembleMasterPrompt(questionTexts, settings.icp || {});
-      const markdown = await synthesize(prompt, settings.apiKey);
+      const markdown = await synthesize(prompt, settings);
 
       return { markdown };
     }
