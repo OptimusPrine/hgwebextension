@@ -2,6 +2,7 @@ const { extractQuestions, synthesize } = require('../src/ai');
 
 const claudeSettings = { provider: 'claude', apiKey: 'test-claude-key' };
 const openaiSettings = { provider: 'openai', openaiApiKey: 'test-openai-key' };
+const localSettings = { provider: 'local' };
 
 function mockFetchSuccess(text, isOpenAI = false) {
   global.fetch = jest.fn().mockResolvedValue({
@@ -11,6 +12,18 @@ function mockFetchSuccess(text, isOpenAI = false) {
       ? { choices: [{ message: { content: text } }] }
       : { content: [{ type: 'text', text }] },
   });
+}
+
+function mockFetchLocal(text) {
+  global.fetch = jest.fn().mockResolvedValue({
+    ok: true,
+    status: 200,
+    json: async () => ({ text }),
+  });
+}
+
+function requestBody() {
+  return JSON.parse(global.fetch.mock.calls[0][1].body);
 }
 
 function mockFetchError(status) {
@@ -100,4 +113,49 @@ test('synthesize with OpenAI calls OpenAI endpoint', async () => {
   mockFetchSuccess('# Map', true);
   await synthesize('prompt', openaiSettings);
   expect(global.fetch.mock.calls[0][0]).toContain('openai.com');
+});
+
+// ── Local provider (Claude Code proxy) ─────────────────────────────────────────
+
+test('extractQuestions with local provider posts to the local proxy by default', async () => {
+  mockFetchLocal('1. Question A?');
+  await extractQuestions('prompt', localSettings);
+  expect(global.fetch.mock.calls[0][0]).toContain('127.0.0.1:8787');
+});
+
+test('extractQuestions with local provider requests the extract model', async () => {
+  mockFetchLocal('1. Question A?');
+  await extractQuestions('prompt', localSettings);
+  expect(requestBody().model).toBe('haiku');
+});
+
+test('extractQuestions with local provider parses numbered list from { text }', async () => {
+  mockFetchLocal('1. How do I manage waitlists?\n2. Can I automate billing?');
+  const questions = await extractQuestions('prompt', localSettings);
+  expect(questions).toContain('How do I manage waitlists?');
+  expect(questions).toContain('Can I automate billing?');
+});
+
+test('synthesize with local provider requests the synthesize model', async () => {
+  mockFetchLocal('# Map');
+  await synthesize('prompt', localSettings);
+  expect(requestBody().model).toBe('sonnet');
+});
+
+test('synthesize with local provider returns raw markdown from { text }', async () => {
+  const markdown = '## Unaware\n| # | Question |\n';
+  mockFetchLocal(markdown);
+  const result = await synthesize('prompt', localSettings);
+  expect(result).toBe(markdown);
+});
+
+test('local provider honors a custom proxy URL from settings', async () => {
+  mockFetchLocal('1. Question A?');
+  await extractQuestions('prompt', { provider: 'local', localProxyUrl: 'http://127.0.0.1:9999/v1/messages' });
+  expect(global.fetch.mock.calls[0][0]).toBe('http://127.0.0.1:9999/v1/messages');
+});
+
+test('local provider throws a descriptive error when the proxy is unreachable', async () => {
+  global.fetch = jest.fn().mockRejectedValue(new TypeError('Failed to fetch'));
+  await expect(synthesize('prompt', localSettings)).rejects.toThrow(/proxy/i);
 });

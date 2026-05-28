@@ -9,6 +9,16 @@ async function getSettings() {
   return result[SETTINGS_KEY] || {};
 }
 
+// The local provider authenticates through the Claude Code proxy, so it needs no
+// API key. Returns an error string when a key is required but missing, else null.
+function missingKeyError(settings) {
+  if (settings.provider === 'local') return null;
+  const hasKey = settings.provider === 'openai' ? settings.openaiApiKey : settings.apiKey;
+  if (hasKey) return null;
+  const which = settings.provider === 'openai' ? 'OpenAI' : 'Claude';
+  return `No ${which} API key set. Please add it in Settings.`;
+}
+
 chrome.runtime.onInstalled.addListener(() => {
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
 });
@@ -48,11 +58,8 @@ async function handleMessage(message, sender) {
 
       const settings = await getSettings();
 
-      const hasKey = settings.provider === 'openai' ? settings.openaiApiKey : settings.apiKey;
-      if (!hasKey) {
-        const which = settings.provider === 'openai' ? 'OpenAI' : 'Claude';
-        return { error: `No ${which} API key set. Please add it in Settings.` };
-      }
+      const keyErr = missingKeyError(settings);
+      if (keyErr) return { error: keyErr };
 
       const rawText = typeof content === 'string' ? content
         : content.text || [content.title, content.body, ...(content.comments || [])].join('\n');
@@ -70,11 +77,8 @@ async function handleMessage(message, sender) {
 
     case 'SYNTHESIZE_REQUESTED': {
       const settings = await getSettings();
-      const hasKey = settings.provider === 'openai' ? settings.openaiApiKey : settings.apiKey;
-      if (!hasKey) {
-        const which = settings.provider === 'openai' ? 'OpenAI' : 'Claude';
-        return { error: `No ${which} API key set.` };
-      }
+      const keyErr = missingKeyError(settings);
+      if (keyErr) return { error: keyErr };
 
       const allQuestions = await getAllQuestions();
       if (allQuestions.length === 0) {
@@ -115,11 +119,8 @@ async function handleMessage(message, sender) {
 
     case 'SUGGEST_SEARCHES_REQUESTED': {
       const settings = await getSettings();
-      const hasKey = settings.provider === 'openai' ? settings.openaiApiKey : settings.apiKey;
-      if (!hasKey) {
-        const which = settings.provider === 'openai' ? 'OpenAI' : 'Claude';
-        return { error: `No ${which} API key set.` };
-      }
+      const keyErr = missingKeyError(settings);
+      if (keyErr) return { error: keyErr };
 
       const allQuestions = await getAllQuestions();
       if (allQuestions.length === 0) {
