@@ -4,7 +4,10 @@ const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
 const MODELS = {
   claude:  { extract: 'claude-haiku-4-5-20251001', synthesize: 'claude-sonnet-4-6' },
   openai:  { extract: 'gpt-4o-mini',               synthesize: 'gpt-4o' },
+  local:   { extract: 'haiku',                     synthesize: 'sonnet' },
 };
+
+const LOCAL_PROXY_URL = 'http://127.0.0.1:8787/v1/messages';
 
 const ERROR_MESSAGES = {
   401: 'Invalid API key. Check your API key in Settings.',
@@ -71,6 +74,29 @@ async function callOpenAI(prompt, apiKey, model, maxTokens) {
   return data.choices?.[0]?.message?.content ?? '';
 }
 
+async function callLocal(prompt, proxyUrl, model) {
+  const url = proxyUrl || LOCAL_PROXY_URL;
+
+  let response;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ prompt, model }),
+    });
+  } catch {
+    throw new Error('Local proxy not reachable. Start it with: node proxy/server.js');
+  }
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data?.error || `Local proxy error (${response.status}).`);
+  }
+
+  const data = await response.json();
+  return data.text ?? '';
+}
+
 async function callAI(prompt, settings, modelKey) {
   const provider = settings.provider || 'claude';
   const models = MODELS[provider] || MODELS.claude;
@@ -80,7 +106,11 @@ async function callAI(prompt, settings, modelKey) {
   if (provider === 'openai') {
     return callOpenAI(prompt, settings.openaiApiKey, model, maxTokens);
   }
+  if (provider === 'local') {
+    return callLocal(prompt, settings.localProxyUrl, model);
+  }
   return callClaude(prompt, settings.apiKey, model, maxTokens);
+
 }
 
 function parseNumberedList(text) {

@@ -99,6 +99,7 @@
       <div class="vc-provider-toggle" id="vc-provider-toggle">
         <button class="vc-provider-btn active" data-provider="claude">Claude</button>
         <button class="vc-provider-btn" data-provider="openai">OpenAI</button>
+        <button class="vc-provider-btn" data-provider="local">Local</button>
       </div>
 
       <label class="vc-label">Claude API Key</label>
@@ -106,6 +107,9 @@
 
       <label class="vc-label">OpenAI API Key</label>
       <input type="password" class="vc-input" id="vc-openai-apikey" placeholder="sk-...">
+
+      <label class="vc-label">Local Proxy URL <span style="color:var(--muted);font-weight:400">(uses your Claude Max login — no key)</span></label>
+      <input type="text" class="vc-input" id="vc-local-url" placeholder="http://127.0.0.1:8787/v1/messages">
 
       <label class="vc-label">Product Name</label>
       <input type="text" class="vc-input" id="vc-product" placeholder="Rolliance">

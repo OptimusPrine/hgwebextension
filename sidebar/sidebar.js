@@ -64,6 +64,7 @@ async function loadSettings() {
   setSelectedProvider(settings.provider || 'claude');
   setVal('vc-apikey', settings.apiKey);
   setVal('vc-openai-apikey', settings.openaiApiKey);
+  setVal('vc-local-url', settings.localProxyUrl);
   setVal('vc-product', icp.product);
   setVal('vc-description', icp.description);
   setVal('vc-price', icp.price);
@@ -76,6 +77,7 @@ function readSettings() {
     provider: getSelectedProvider(),
     apiKey: get('vc-apikey'),
     openaiApiKey: get('vc-openai-apikey'),
+    localProxyUrl: get('vc-local-url'),
     icp: {
       product: get('vc-product'),
       description: get('vc-description'),
