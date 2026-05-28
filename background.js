@@ -1,6 +1,7 @@
 importScripts('src/questionbank.js', 'src/prompts.js', 'src/ai.js');
 
 const LAST_SYNTHESIS_KEY = 'lastSynthesis';
+const BLOG_TOPICS_KEY = 'blogTopics';
 
 const SETTINGS_KEY = 'settings';
 
@@ -136,6 +137,31 @@ async function handleMessage(message, sender) {
       const suggestions = parseSuggestions(text);
 
       return { suggestions };
+    }
+
+    case 'SAVE_BLOG_TOPICS': {
+      await chrome.storage.local.set({ [BLOG_TOPICS_KEY]: message.topics || [] });
+      return { ok: true };
+    }
+
+    case 'GET_BLOG_TOPICS': {
+      const stored = await chrome.storage.local.get(BLOG_TOPICS_KEY);
+      return { topics: stored[BLOG_TOPICS_KEY] || [] };
+    }
+
+    case 'GENERATE_BLOG_POST': {
+      if (!message.question) return { error: 'No question provided.' };
+
+      const settings = await getSettings();
+      const hasKey = settings.provider === 'openai' ? settings.openaiApiKey : settings.apiKey;
+      if (!hasKey) {
+        const which = settings.provider === 'openai' ? 'OpenAI' : 'Claude';
+        return { error: `No ${which} API key set.` };
+      }
+
+      const prompt = assembleBlogPrompt(message.question, settings.icp || {});
+      const markdown = await synthesize(prompt, settings);
+      return { markdown };
     }
 
     default:

@@ -13,6 +13,7 @@
     <button class="vc-rail-btn active" data-tab="capture" title="Capture">⊕</button>
     <button class="vc-rail-btn" data-tab="bank" title="Question Bank">≡</button>
     <button class="vc-rail-btn" data-tab="synthesize" title="Synthesize">⚡</button>
+    <button class="vc-rail-btn" data-tab="blog" title="Blog Posts">✏</button>
     <button class="vc-rail-btn vc-rail-bottom" id="vc-dark-toggle" title="Toggle dark mode">☀</button>
     <button class="vc-rail-btn" data-tab="settings" title="Settings">⚙</button>
   </nav>
@@ -76,6 +77,19 @@
         <button class="vc-btn-secondary" id="vc-pdf-btn">Export PDF</button>
       </div>
       <pre class="vc-output hidden" id="vc-output"></pre>
+    </div>
+
+    <div class="vc-pane hidden" data-pane="blog">
+      <h2 class="vc-title">Blog Posts</h2>
+      <p class="vc-hint" id="vc-blog-hint">Run synthesis first to generate the top 10 topic list.</p>
+      <ul class="vc-blog-list" id="vc-blog-list"></ul>
+      <div class="vc-blog-output-wrap hidden" id="vc-blog-output-wrap">
+        <div class="vc-export-row">
+          <button class="vc-btn-secondary" id="vc-blog-copy-btn">Copy Markdown</button>
+          <button class="vc-btn-secondary" id="vc-blog-pdf-btn">Export PDF</button>
+        </div>
+        <pre class="vc-output vc-blog-output" id="vc-blog-output"></pre>
+      </div>
     </div>
 
     <div class="vc-pane hidden" data-pane="settings">

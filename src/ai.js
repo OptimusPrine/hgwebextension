@@ -21,7 +21,9 @@ function extractApiErrorMessage(data) {
   return data?.error?.message || null;
 }
 
-async function callClaude(prompt, apiKey, model) {
+const MAX_TOKENS = { extract: 2048, synthesize: 8192 };
+
+async function callClaude(prompt, apiKey, model, maxTokens) {
   const response = await fetch(CLAUDE_URL, {
     method: 'POST',
     headers: {
@@ -31,7 +33,7 @@ async function callClaude(prompt, apiKey, model) {
     },
     body: JSON.stringify({
       model,
-      max_tokens: 4096,
+      max_tokens: maxTokens,
       messages: [{ role: 'user', content: prompt }],
     }),
   });
@@ -47,7 +49,7 @@ async function callClaude(prompt, apiKey, model) {
   return data.content?.[0]?.text ?? '';
 }
 
-async function callOpenAI(prompt, apiKey, model) {
+async function callOpenAI(prompt, apiKey, model, maxTokens) {
   const response = await fetch(OPENAI_URL, {
     method: 'POST',
     headers: {
@@ -56,7 +58,7 @@ async function callOpenAI(prompt, apiKey, model) {
     },
     body: JSON.stringify({
       model,
-      max_tokens: 4096,
+      max_tokens: maxTokens,
       messages: [{ role: 'user', content: prompt }],
     }),
   });
@@ -99,14 +101,16 @@ async function callAI(prompt, settings, modelKey) {
   const provider = settings.provider || 'claude';
   const models = MODELS[provider] || MODELS.claude;
   const model = models[modelKey];
+  const maxTokens = MAX_TOKENS[modelKey] || 4096;
 
   if (provider === 'openai') {
-    return callOpenAI(prompt, settings.openaiApiKey, model);
+    return callOpenAI(prompt, settings.openaiApiKey, model, maxTokens);
   }
   if (provider === 'local') {
     return callLocal(prompt, settings.localProxyUrl, model);
   }
-  return callClaude(prompt, settings.apiKey, model);
+  return callClaude(prompt, settings.apiKey, model, maxTokens);
+
 }
 
 function parseNumberedList(text) {
