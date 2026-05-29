@@ -107,7 +107,9 @@ async function callAI(prompt, settings, modelKey) {
     return callOpenAI(prompt, settings.openaiApiKey, model, maxTokens);
   }
   if (provider === 'local') {
-    return callLocal(prompt, settings.localProxyUrl, model);
+    const localModel = (modelKey === 'extract' ? settings.localExtractModel : settings.localSynthesizeModel)
+      || MODELS.local[modelKey];
+    return callLocal(prompt, settings.localProxyUrl, localModel);
   }
   return callClaude(prompt, settings.apiKey, model, maxTokens);
 

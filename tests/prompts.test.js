@@ -237,3 +237,41 @@ test('formatIcp produces a non-empty string with all ICP fields', () => {
   expect(typeof formatted).toBe('string');
   expect(formatted.length).toBeGreaterThan(0);
 });
+
+// ── Template overrides (editable prompts) ────────────────────────────────────
+
+test('assembleMasterPrompt uses a custom template override when provided', () => {
+  const out = assembleMasterPrompt(['Q1?'], icp, 'CUSTOM ICP={{ICP}} Q={{QUESTIONS}}');
+  expect(out).toContain('CUSTOM');
+  expect(out).toContain('Q1?');
+  expect(out).toContain('Rolliance');
+  expect(out).not.toContain('Buyer-Question Map'); // default master template not used
+});
+
+test('assemblePrompt uses a custom override template for the source', () => {
+  const out = assemblePrompt('reddit', 'CONTENT_X', icp, 'OVERRIDE {{CONTENT}}');
+  expect(out).toBe('OVERRIDE CONTENT_X');
+});
+
+test('assembleBlogPrompt uses a custom override template', () => {
+  const out = assembleBlogPrompt('Why switch?', icp, 'BLOG Q={{QUESTION}} ICP={{ICP}}');
+  expect(out).toContain('BLOG Q=Why switch?');
+  expect(out).toContain('Rolliance');
+});
+
+test('assembleSuggestionsPrompt uses a custom override template', () => {
+  const out = assembleSuggestionsPrompt(['Q1?'], icp, '', 'SUGG ICP={{ICP}} Q={{QUESTIONS}}');
+  expect(out).toContain('SUGG');
+  expect(out).toContain('Q1?');
+  expect(out).toContain('Rolliance');
+});
+
+test('an empty override falls back to the default template', () => {
+  const out = assembleMasterPrompt(['Q1?'], icp, '');
+  expect(out).toContain('Buyer-Question Map');
+});
+
+test('question text containing a dollar sign is preserved verbatim', () => {
+  const out = assembleMasterPrompt(['Is it really $99/month?'], icp);
+  expect(out).toContain('$99/month');
+});

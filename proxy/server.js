@@ -8,7 +8,7 @@ const SYSTEM_PROMPT =
   'You are a precise text-processing assistant. Follow the user instructions exactly ' +
   'and return only the requested output, with no preamble or commentary.';
 
-const REQUEST_TIMEOUT_MS = 120000;
+const REQUEST_TIMEOUT_MS = Number(process.env.CLAUDE_TIMEOUT_MS) || 300000;
 
 // Contract this depends on (verified against claude 2.1.x):
 //   claude -p ... --output-format json  →  { is_error: bool, result: string }
@@ -26,6 +26,8 @@ function runClaude(prompt, model) {
       '--system-prompt', SYSTEM_PROMPT,
       '--output-format', 'json',
     ];
+    const started = Date.now();
+    console.log(`[proxy] → claude model=${model} promptChars=${prompt.length} timeout=${REQUEST_TIMEOUT_MS}ms`);
     const child = spawn('claude', args, {
       stdio: ['pipe', 'pipe', 'pipe'],
       cwd: os.tmpdir(),
@@ -38,6 +40,7 @@ function runClaude(prompt, model) {
 
     const timer = setTimeout(() => {
       child.kill('SIGKILL');
+      console.error(`[proxy] ✗ timeout after ${REQUEST_TIMEOUT_MS}ms model=${model}; partialOut=${stdout.length}B stderr=${stderr.trim()}`);
       finish(() => reject(new Error(`claude timed out after ${REQUEST_TIMEOUT_MS}ms.`)));
     }, REQUEST_TIMEOUT_MS);
 
@@ -45,16 +48,23 @@ function runClaude(prompt, model) {
     child.stderr.on('data', d => { stderr += d; });
     child.on('error', err => finish(() => reject(new Error(`Could not launch claude: ${err.message}`))));
     child.on('close', code => finish(() => {
+      const ms = Date.now() - started;
       if (code !== 0) {
+        console.error(`[proxy] ✗ exit=${code} model=${model} ${ms}ms stderr=${stderr.trim()}`);
         return reject(new Error(stderr.trim() || `claude exited with code ${code}`));
       }
       let data;
       try {
         data = JSON.parse(stdout);
       } catch {
+        console.error(`[proxy] ✗ unparseable output model=${model} ${ms}ms; stdout=${stdout.slice(0, 500)}`);
         return reject(new Error('Could not parse claude output as JSON.'));
       }
-      if (data.is_error) return reject(new Error(data.result || 'claude returned an error.'));
+      if (data.is_error) {
+        console.error(`[proxy] ✗ claude error model=${model} ${ms}ms: ${data.result}`);
+        return reject(new Error(data.result || 'claude returned an error.'));
+      }
+      console.log(`[proxy] ✓ model=${model} ${ms}ms outChars=${(data.result || '').length}`);
       resolve(data.result || '');
     }));
 

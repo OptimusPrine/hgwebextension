@@ -44,9 +44,28 @@ under your Claude subscription (e.g. Max) instead of a paid API key. See
    your subscription.
 3. **Stop the proxy** (Ctrl-C) when you're done.
 
+### Choosing models
+
+In **Settings → Local Models**, pick the model used for **Extract** and **Synthesize**
+independently (`haiku` / `sonnet` / `opus`). Defaults are `haiku` for extract and
+`sonnet` for synthesize. No proxy restart needed — the choice is sent per request.
+
+### Editing prompts
+
+**Settings → Prompt Templates** lets you view and edit any prompt the extension
+sends (synthesize, suggest, blog, and the per-source extractors). Pick one from the
+dropdown, edit the text, and **Save Settings**. Keep the `{{...}}` placeholders
+(e.g. `{{QUESTIONS}}`, `{{ICP}}`) — they're filled in at runtime; deleting one just
+omits that data. **Reset this prompt to default** restores the original. Edits are
+stored per-user and apply to every provider, not just Local.
+
 ### Notes
 
-- Expect **~3s extra per call** (the CLI cold-starts each time).
+- Expect **~3s extra per call** (the CLI cold-starts each time). During synthesize
+  the panel shows an elapsed-time counter so you can see it's still working.
+- The proxy request timeout defaults to **5 minutes**; override with
+  `CLAUDE_TIMEOUT_MS=600000 node proxy/server.js`. Chrome's extension service worker
+  has its own ~5-minute ceiling, so extremely long runs may still be cut off.
 - If the proxy isn't running, the extension shows
   *"Local proxy not reachable. Start it with: node proxy/server.js"*.
 - The proxy binds to `127.0.0.1` and only accepts calls from the extension (it

@@ -159,3 +159,27 @@ test('local provider throws a descriptive error when the proxy is unreachable', 
   global.fetch = jest.fn().mockRejectedValue(new TypeError('Failed to fetch'));
   await expect(synthesize('prompt', localSettings)).rejects.toThrow(/proxy/i);
 });
+
+test('local provider uses the synthesize model from settings when set', async () => {
+  mockFetchLocal('# Map');
+  await synthesize('prompt', { provider: 'local', localSynthesizeModel: 'opus' });
+  expect(requestBody().model).toBe('opus');
+});
+
+test('local provider uses the extract model from settings when set', async () => {
+  mockFetchLocal('1. Q?');
+  await extractQuestions('prompt', { provider: 'local', localExtractModel: 'sonnet' });
+  expect(requestBody().model).toBe('sonnet');
+});
+
+test('local provider falls back to the default model when no override is set', async () => {
+  mockFetchLocal('# Map');
+  await synthesize('prompt', { provider: 'local' });
+  expect(requestBody().model).toBe('sonnet');
+});
+
+test('non-local providers ignore the local model settings', async () => {
+  mockFetchSuccess('# Map');
+  await synthesize('prompt', { provider: 'claude', apiKey: 'k', localSynthesizeModel: 'opus' });
+  expect(requestBody().model).toBe('claude-sonnet-4-6');
+});

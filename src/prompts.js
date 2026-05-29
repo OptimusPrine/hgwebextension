@@ -155,43 +155,13 @@ RAW CONTENT:
 """`,
 };
 
-function formatIcp(icp) {
-  const competitors = Array.isArray(icp.competitors) ? icp.competitors.join(', ') : (icp.competitors || '');
-  return `Product: ${icp.product || ''}
-Description: ${icp.description || ''}
-Price: ${icp.price || ''}
-Key competitors: ${competitors}`;
-}
-
-function assemblePrompt(source, content, icp) {
-  const template = SOURCE_PROMPTS[source];
-  if (!template) return null;
-  return template
-    .replace('{{ICP}}', formatIcp(icp))
-    .replace('{{CONTENT}}', content);
-}
-
-function assembleMasterPrompt(questions, icp) {
-  const questionList = questions.map((q, i) => `${i + 1}. ${q}`).join('\n');
-  return MASTER_PROMPT
-    .replace('{{ICP}}', formatIcp(icp))
-    .replace('{{QUESTIONS}}', questionList);
-}
-
-function assembleSuggestionsPrompt(questions, icp, lastSynthesisSnippet) {
-  const icpText = formatIcp(icp);
-  const sample = questions.slice(-25).map((q, i) => `${i + 1}. ${q}`).join('\n');
-  const gapContext = lastSynthesisSnippet
-    ? `\nContext from the last synthesis (pay attention to the GAPS section):\n"""\n${lastSynthesisSnippet}\n"""\n`
-    : '';
-
-  return `You are a marketing research strategist helping build a Buyer-Question Map.
+const SUGGESTIONS_PROMPT = `You are a marketing research strategist helping build a Buyer-Question Map.
 
 ICP:
-${icpText}
-${gapContext}
-Current questions already captured (most recent ${questions.length <= 25 ? questions.length : 25} shown):
-${sample}
+{{ICP}}
+{{GAP_CONTEXT}}
+Current questions already captured (most recent {{COUNT}} shown):
+{{QUESTIONS}}
 
 Based on the above, suggest the most valuable search queries to run NEXT — prioritising journey stages that appear underrepresented.
 
@@ -212,6 +182,52 @@ GOOGLE:
 5. [specific search query]
 
 Be specific. Use real competitor names. Use the language buyers actually use.`;
+
+// Replaces each {{KEY}} once with its value. Uses a function replacement so that
+// `$` sequences in the value (e.g. "$99/month") are inserted verbatim rather than
+// interpreted as replacement patterns.
+function fill(template, values) {
+  let out = template;
+  for (const [key, value] of Object.entries(values)) {
+    out = out.replace(key, () => value);
+  }
+  return out;
+}
+
+function formatIcp(icp) {
+  const competitors = Array.isArray(icp.competitors) ? icp.competitors.join(', ') : (icp.competitors || '');
+  return `Product: ${icp.product || ''}
+Description: ${icp.description || ''}
+Price: ${icp.price || ''}
+Key competitors: ${competitors}`;
+}
+
+function assemblePrompt(source, content, icp, template) {
+  const tpl = template || SOURCE_PROMPTS[source];
+  if (!tpl) return null;
+  return fill(tpl, { '{{ICP}}': formatIcp(icp), '{{CONTENT}}': content });
+}
+
+function assembleMasterPrompt(questions, icp, template) {
+  const tpl = template || MASTER_PROMPT;
+  const questionList = questions.map((q, i) => `${i + 1}. ${q}`).join('\n');
+  return fill(tpl, { '{{ICP}}': formatIcp(icp), '{{QUESTIONS}}': questionList });
+}
+
+function assembleSuggestionsPrompt(questions, icp, lastSynthesisSnippet, template) {
+  const tpl = template || SUGGESTIONS_PROMPT;
+  const sample = questions.slice(-25).map((q, i) => `${i + 1}. ${q}`).join('\n');
+  const count = questions.length <= 25 ? questions.length : 25;
+  const gapContext = lastSynthesisSnippet
+    ? `\nContext from the last synthesis (pay attention to the GAPS section):\n"""\n${lastSynthesisSnippet}\n"""\n`
+    : '';
+
+  return fill(tpl, {
+    '{{ICP}}': formatIcp(icp),
+    '{{GAP_CONTEXT}}': gapContext,
+    '{{COUNT}}': String(count),
+    '{{QUESTIONS}}': sample,
+  });
 }
 
 function parseSuggestions(text) {
@@ -287,15 +303,14 @@ function parseBuildTheseFirst(markdown) {
   return bestList;
 }
 
-function assembleBlogPrompt(question, icp) {
-  return `You are an expert SEO content writer for B2B SaaS.
+const BLOG_PROMPT = `You are an expert SEO content writer for B2B SaaS.
 
 Write a 900–1200 word blog post targeting the following question as the primary keyword topic:
 
-QUESTION: ${question}
+QUESTION: {{QUESTION}}
 
 ICP CONTEXT:
-${formatIcp(icp)}
+{{ICP}}
 
 The post must include:
 1. SEO Title (60 chars or under, keyword-first)
@@ -308,8 +323,25 @@ Tone: confident, practical, peer-to-peer. Write for the buyer described in the I
 Use competitor names naturally where relevant for comparison.
 Do not use dashes of any kind (em dashes, en dashes, hyphens in prose). Rewrite any sentence that would need one.
 Output clean markdown only. No commentary before or after.`;
+
+function assembleBlogPrompt(question, icp, template) {
+  const tpl = template || BLOG_PROMPT;
+  return fill(tpl, { '{{QUESTION}}': question, '{{ICP}}': formatIcp(icp) });
 }
 
+// Keyed by the id stored in settings.prompts; surfaced in the sidebar for
+// viewing/editing and used as the fallback when no override exists.
+const DEFAULT_PROMPTS = {
+  master: MASTER_PROMPT,
+  reddit: SOURCE_PROMPTS.reddit,
+  google: SOURCE_PROMPTS.google,
+  g2: SOURCE_PROMPTS.g2,
+  capterra: SOURCE_PROMPTS.capterra,
+  youtube: SOURCE_PROMPTS.youtube,
+  suggestions: SUGGESTIONS_PROMPT,
+  blog: BLOG_PROMPT,
+};
+
 if (typeof module !== 'undefined') {
-  module.exports = { assemblePrompt, assembleMasterPrompt, formatIcp, assembleSuggestionsPrompt, parseSuggestions, parseBuildTheseFirst, assembleBlogPrompt };
+  module.exports = { assemblePrompt, assembleMasterPrompt, formatIcp, assembleSuggestionsPrompt, parseSuggestions, parseBuildTheseFirst, assembleBlogPrompt, DEFAULT_PROMPTS };
 }

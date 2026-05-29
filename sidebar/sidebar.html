@@ -111,6 +111,20 @@
       <label class="vc-label">Local Proxy URL <span style="color:var(--muted);font-weight:400">(uses your Claude Max login — no key)</span></label>
       <input type="text" class="vc-input" id="vc-local-url" placeholder="http://127.0.0.1:8787/v1/messages">
 
+      <label class="vc-label">Local Models <span style="color:var(--muted);font-weight:400">(Local provider only)</span></label>
+      <div style="display:flex;gap:8px">
+        <select class="vc-select" id="vc-local-extract-model" style="flex:1">
+          <option value="haiku">Extract: Haiku</option>
+          <option value="sonnet">Extract: Sonnet</option>
+          <option value="opus">Extract: Opus</option>
+        </select>
+        <select class="vc-select" id="vc-local-synth-model" style="flex:1">
+          <option value="haiku">Synthesize: Haiku</option>
+          <option value="sonnet">Synthesize: Sonnet</option>
+          <option value="opus">Synthesize: Opus</option>
+        </select>
+      </div>
+
       <label class="vc-label">Product Name</label>
       <input type="text" class="vc-input" id="vc-product" placeholder="Rolliance">
 
@@ -122,6 +136,20 @@
 
       <label class="vc-label">Competitors (comma-separated)</label>
       <input type="text" class="vc-input" id="vc-competitors" placeholder="MindBody, ZenPlanner, Gymdesk">
+
+      <label class="vc-label">Prompt Templates <span style="color:var(--muted);font-weight:400">(edit what's sent to the model)</span></label>
+      <select class="vc-select" id="vc-prompt-select">
+        <option value="master">Synthesize (master)</option>
+        <option value="suggestions">Suggest searches</option>
+        <option value="blog">Blog post</option>
+        <option value="reddit">Extract: Reddit</option>
+        <option value="google">Extract: Google</option>
+        <option value="g2">Extract: G2</option>
+        <option value="capterra">Extract: Capterra</option>
+        <option value="youtube">Extract: YouTube</option>
+      </select>
+      <textarea class="vc-input" id="vc-prompt-text" rows="10" style="font-family:monospace;min-height:160px;resize:vertical"></textarea>
+      <button class="vc-btn-secondary" id="vc-prompt-reset">Reset this prompt to default</button>
 
       <button class="vc-btn-primary" id="vc-save-btn">Save Settings</button>
       <span class="vc-saved hidden" id="vc-saved">✓ Saved</span>
