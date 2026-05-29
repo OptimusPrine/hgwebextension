@@ -303,30 +303,56 @@ function parseBuildTheseFirst(markdown) {
   return bestList;
 }
 
+// House rules for blog generation. Editable in the sidebar (stored separately
+// from the structural prompt) and injected into BLOG_PROMPT at {{GUIDELINES}}.
+const DEFAULT_BLOG_GUIDELINES = `- Do not use dashes of any kind (em dashes, en dashes, or hyphens in prose). Rewrite any sentence that would need one.
+- Tone: confident, practical, peer-to-peer. Write for the buyer described in the ICP context, not a generic audience.
+- Use competitor names naturally where relevant for comparison.
+- Target 900 to 1200 words in the body.
+- Open with a hook that states the problem, then 3 to 4 H2 sections of practical, specific copy with no fluff.
+- End with a call to action that mentions the product by name and price.`;
+
 const BLOG_PROMPT = `You are an expert SEO content writer for B2B SaaS.
 
-Write a 900–1200 word blog post targeting the following question as the primary keyword topic:
+Write a blog post targeting the following question as the primary keyword topic:
 
 QUESTION: {{QUESTION}}
 
 ICP CONTEXT:
 {{ICP}}
 
-The post must include:
-1. SEO Title (60 chars or under, keyword-first)
-2. Meta Description (under 155 chars, includes a CTA)
-3. Introduction paragraph (hook the reader, state the problem)
-4. 3–4 H2 sections with body copy — practical, specific, no fluff
-5. A closing CTA paragraph mentioning the product by name and price
+GUIDELINES (follow all of these):
+{{GUIDELINES}}
 
-Tone: confident, practical, peer-to-peer. Write for the buyer described in the ICP context above, not a generic audience.
-Use competitor names naturally where relevant for comparison.
-Do not use dashes of any kind (em dashes, en dashes, hyphens in prose). Rewrite any sentence that would need one.
-Output clean markdown only. No commentary before or after.`;
+Return the post in EXACTLY this structure, with these four labels and nothing before or after. Do not wrap the output in code fences.
 
-function assembleBlogPrompt(question, icp, template) {
+TITLE: <a plain-text SEO title, 60 characters or fewer, keyword-first>
+EXCERPT: <a plain-text excerpt, 1 to 2 sentences summarising the post>
+META_DESCRIPTION: <a plain-text SEO meta description, 155 characters or fewer, including a call to action>
+CONTENT_HTML:
+<the full blog post body as valid, clean HTML. Use <h2> for section headings, <p> for paragraphs, and <ul>/<ol>/<li> for lists. Do not include the title as an <h1>. Do not include <html>, <head>, or <body> tags; output only the body markup.>`;
+
+function assembleBlogPrompt(question, icp, template, guidelines) {
   const tpl = template || BLOG_PROMPT;
-  return fill(tpl, { '{{QUESTION}}': question, '{{ICP}}': formatIcp(icp) });
+  const guide = guidelines || DEFAULT_BLOG_GUIDELINES;
+  return fill(tpl, { '{{QUESTION}}': question, '{{ICP}}': formatIcp(icp), '{{GUIDELINES}}': guide });
+}
+
+// Parses the structured blog output into discrete fields. Title/excerpt/meta are
+// plain text; the body is HTML. If the model ignored the format, the whole output
+// is returned as the HTML body so nothing is silently lost.
+function parseBlogPost(text) {
+  const field = label => {
+    const m = text.match(new RegExp(`^${label}:[ \\t]*(.+)$`, 'mi'));
+    return m ? m[1].trim() : '';
+  };
+  const bodyMatch = text.match(/^CONTENT_HTML:[ \t]*\n?([\s\S]*)$/mi);
+  return {
+    title: field('TITLE'),
+    excerpt: field('EXCERPT'),
+    metaDescription: field('META_DESCRIPTION'),
+    contentHtml: bodyMatch ? bodyMatch[1].trim() : text.trim(),
+  };
 }
 
 // Keyed by the id stored in settings.prompts; surfaced in the sidebar for
@@ -340,8 +366,9 @@ const DEFAULT_PROMPTS = {
   youtube: SOURCE_PROMPTS.youtube,
   suggestions: SUGGESTIONS_PROMPT,
   blog: BLOG_PROMPT,
+  'blog-guidelines': DEFAULT_BLOG_GUIDELINES,
 };
 
 if (typeof module !== 'undefined') {
-  module.exports = { assemblePrompt, assembleMasterPrompt, formatIcp, assembleSuggestionsPrompt, parseSuggestions, parseBuildTheseFirst, assembleBlogPrompt, DEFAULT_PROMPTS };
+  module.exports = { assemblePrompt, assembleMasterPrompt, formatIcp, assembleSuggestionsPrompt, parseSuggestions, parseBuildTheseFirst, assembleBlogPrompt, parseBlogPost, DEFAULT_PROMPTS };
 }

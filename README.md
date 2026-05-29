@@ -59,6 +59,12 @@ dropdown, edit the text, and **Save Settings**. Keep the `{{...}}` placeholders
 omits that data. **Reset this prompt to default** restores the original. Edits are
 stored per-user and apply to every provider, not just Local.
 
+**Blog posts** are generated as discrete fields — Title, Excerpt, and Meta
+description as plain text, and the body as HTML — each with its own Copy button in
+the Blog tab, ready to paste into your CMS. House rules (no em/en dashes, tone,
+required structure) live in the editable **Blog guidelines** entry in the prompt
+dropdown. Generation runs under whichever provider is selected, including Local.
+
 ### Notes
 
 - Expect **~3s extra per call** (the CLI cold-starts each time). During synthesize

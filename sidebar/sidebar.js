@@ -393,7 +393,7 @@ function parseBuildTheseFirst(markdown) {
 }
 
 let blogTopics = [];
-let lastBlogMarkdown = '';
+let lastBlogPost = null;
 
 async function initBlogTab() {
   const { topics } = await msg('GET_BLOG_TOPICS');
@@ -432,15 +432,17 @@ function renderBlogList() {
 
 async function handleGeneratePost(question, btn) {
   const outputWrap = el('vc-blog-output-wrap');
-  const output = el('vc-blog-output');
+  const status = el('vc-blog-status');
+  const fields = el('vc-blog-fields');
   const allBtns = document.querySelectorAll('.vc-blog-generate-btn');
 
   btn.textContent = 'Writing…';
   allBtns.forEach(b => b.disabled = true);
   outputWrap.classList.remove('hidden');
+  fields.classList.add('hidden');
 
   const startedAt = Date.now();
-  const tick = () => { output.textContent = `Generating blog post… ${Math.round((Date.now() - startedAt) / 1000)}s elapsed`; };
+  const tick = () => { status.textContent = `Generating blog post… ${Math.round((Date.now() - startedAt) / 1000)}s elapsed`; };
   tick();
   const ticker = setInterval(tick, 1000);
 
@@ -455,14 +457,22 @@ async function handleGeneratePost(question, btn) {
   allBtns.forEach(b => b.disabled = false);
 
   if (result.error) {
-    output.textContent = 'Error: ' + result.error;
+    status.textContent = 'Error: ' + result.error;
     return;
   }
 
-  lastBlogMarkdown = result.markdown;
-  output.textContent = result.markdown;
-  el('vc-blog-copy-btn').onclick = () => navigator.clipboard.writeText(lastBlogMarkdown);
-  el('vc-blog-pdf-btn').onclick = () => exportPdf(lastBlogMarkdown);
+  lastBlogPost = result.post;
+  status.textContent = '';
+  el('vc-blog-title').textContent = lastBlogPost.title;
+  el('vc-blog-excerpt').textContent = lastBlogPost.excerpt;
+  el('vc-blog-meta').textContent = lastBlogPost.metaDescription;
+  el('vc-blog-content').textContent = lastBlogPost.contentHtml;
+  fields.classList.remove('hidden');
+
+  // Each field copies its own plain value (HTML body copies the raw markup).
+  fields.querySelectorAll('.vc-blog-copy').forEach(b => {
+    b.onclick = () => navigator.clipboard.writeText(lastBlogPost[b.dataset.copy] || '');
+  });
 }
 
 // ── PDF export ────────────────────────────────────────────────────────────────

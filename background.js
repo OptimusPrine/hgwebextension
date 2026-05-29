@@ -156,15 +156,12 @@ async function handleMessage(message, sender) {
       if (!message.question) return { error: 'No question provided.' };
 
       const settings = await getSettings();
-      const hasKey = settings.provider === 'openai' ? settings.openaiApiKey : settings.apiKey;
-      if (!hasKey) {
-        const which = settings.provider === 'openai' ? 'OpenAI' : 'Claude';
-        return { error: `No ${which} API key set.` };
-      }
+      const keyErr = missingKeyError(settings);
+      if (keyErr) return { error: keyErr };
 
-      const prompt = assembleBlogPrompt(message.question, settings.icp || {}, settings.prompts?.blog);
-      const markdown = await synthesize(prompt, settings);
-      return { markdown };
+      const prompt = assembleBlogPrompt(message.question, settings.icp || {}, settings.prompts?.blog, settings.prompts?.['blog-guidelines']);
+      const raw = await synthesize(prompt, settings);
+      return { post: parseBlogPost(raw) };
     }
 
     default:

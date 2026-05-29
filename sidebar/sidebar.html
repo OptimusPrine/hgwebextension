@@ -84,11 +84,20 @@
       <p class="vc-hint" id="vc-blog-hint">Run synthesis first to generate the top 10 topic list.</p>
       <ul class="vc-blog-list" id="vc-blog-list"></ul>
       <div class="vc-blog-output-wrap hidden" id="vc-blog-output-wrap">
-        <div class="vc-export-row">
-          <button class="vc-btn-secondary" id="vc-blog-copy-btn">Copy Markdown</button>
-          <button class="vc-btn-secondary" id="vc-blog-pdf-btn">Export PDF</button>
+        <div class="vc-feedback" id="vc-blog-status"></div>
+        <div id="vc-blog-fields" class="hidden">
+          <label class="vc-label">Title <button class="vc-btn-secondary vc-blog-copy" data-copy="title" style="float:right;padding:1px 8px">Copy</button></label>
+          <div class="vc-blog-value" id="vc-blog-title" style="font-size:12px;padding:4px 6px;border:1px solid var(--border,#ddd);border-radius:4px;white-space:pre-wrap"></div>
+
+          <label class="vc-label">Excerpt <button class="vc-btn-secondary vc-blog-copy" data-copy="excerpt" style="float:right;padding:1px 8px">Copy</button></label>
+          <div class="vc-blog-value" id="vc-blog-excerpt" style="font-size:12px;padding:4px 6px;border:1px solid var(--border,#ddd);border-radius:4px;white-space:pre-wrap"></div>
+
+          <label class="vc-label">Meta description (SEO) <button class="vc-btn-secondary vc-blog-copy" data-copy="metaDescription" style="float:right;padding:1px 8px">Copy</button></label>
+          <div class="vc-blog-value" id="vc-blog-meta" style="font-size:12px;padding:4px 6px;border:1px solid var(--border,#ddd);border-radius:4px;white-space:pre-wrap"></div>
+
+          <label class="vc-label">Content (HTML) <button class="vc-btn-secondary vc-blog-copy" data-copy="contentHtml" style="float:right;padding:1px 8px">Copy</button></label>
+          <pre class="vc-output" id="vc-blog-content"></pre>
         </div>
-        <pre class="vc-output vc-blog-output" id="vc-blog-output"></pre>
       </div>
     </div>
 
@@ -142,6 +151,7 @@
         <option value="master">Synthesize (master)</option>
         <option value="suggestions">Suggest searches</option>
         <option value="blog">Blog post</option>
+        <option value="blog-guidelines">Blog guidelines</option>
         <option value="reddit">Extract: Reddit</option>
         <option value="google">Extract: Google</option>
         <option value="g2">Extract: G2</option>
