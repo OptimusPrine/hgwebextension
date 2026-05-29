@@ -17,7 +17,12 @@ node proxy/server.js
 # → Claude proxy listening on http://127.0.0.1:8787
 ```
 
-Override the port with `PORT=9000 node proxy/server.js`.
+Override the port with `PORT=9000 node proxy/server.js`, and the per-request
+timeout (default 5 min) with `CLAUDE_TIMEOUT_MS=600000 node proxy/server.js`.
+
+The proxy logs each request to the console — model, prompt size, and duration on
+success; exit code, partial output, and `claude`'s stderr on timeout or failure —
+so you can see what's happening (e.g. a synthesis that's slow vs. genuinely stuck).
 
 Leave it running while you use the extension.
 

@@ -65,6 +65,9 @@ async function loadSettings() {
   setVal('vc-apikey', settings.apiKey);
   setVal('vc-openai-apikey', settings.openaiApiKey);
   setVal('vc-local-url', settings.localProxyUrl);
+  setVal('vc-local-extract-model', settings.localExtractModel || 'haiku');
+  setVal('vc-local-synth-model', settings.localSynthesizeModel || 'sonnet');
+  promptOverrides = settings.prompts || {};
   setVal('vc-product', icp.product);
   setVal('vc-description', icp.description);
   setVal('vc-price', icp.price);
@@ -72,12 +75,16 @@ async function loadSettings() {
 }
 
 function readSettings() {
+  stashCurrentPrompt();
   const competitors = (get('vc-competitors') || '').split(',').map(s => s.trim()).filter(Boolean);
   return {
     provider: getSelectedProvider(),
     apiKey: get('vc-apikey'),
     openaiApiKey: get('vc-openai-apikey'),
     localProxyUrl: get('vc-local-url'),
+    localExtractModel: get('vc-local-extract-model') || 'haiku',
+    localSynthesizeModel: get('vc-local-synth-model') || 'sonnet',
+    prompts: promptOverrides,
     icp: {
       product: get('vc-product'),
       description: get('vc-description'),
@@ -92,6 +99,57 @@ async function handleSave() {
   const savedEl = el('vc-saved');
   savedEl.classList.remove('hidden');
   setTimeout(() => savedEl.classList.add('hidden'), 2000);
+}
+
+// ── Prompt template editor ─────────────────────────────────────────────────────
+// promptDefaults comes from the background (which owns the canonical templates).
+// promptOverrides holds only the prompts the user has actually changed; an entry
+// equal to the default (or empty) is dropped so storage stays clean.
+let promptDefaults = {};
+let promptOverrides = {};
+let currentPromptId = 'master';
+
+function defaultPrompt(id) {
+  return promptDefaults[id] || '';
+}
+
+function stashCurrentPrompt() {
+  const textarea = el('vc-prompt-text');
+  if (!textarea) return;
+  // If defaults never loaded, the editor is empty for the wrong reason — don't
+  // let that delete a real override the user had saved.
+  if (!Object.keys(promptDefaults).length) return;
+  const val = textarea.value;
+  // Empty or whitespace-only means "use the default", not "send a blank prompt".
+  if (!val.trim() || val === defaultPrompt(currentPromptId)) {
+    delete promptOverrides[currentPromptId];
+  } else {
+    promptOverrides[currentPromptId] = val;
+  }
+}
+
+function loadPromptIntoEditor(id) {
+  currentPromptId = id;
+  const textarea = el('vc-prompt-text');
+  if (textarea) textarea.value = promptOverrides[id] ?? defaultPrompt(id);
+}
+
+async function initPromptEditor() {
+  const sel = el('vc-prompt-select');
+  if (!sel) return;
+  const { prompts } = await msg('GET_DEFAULT_PROMPTS');
+  promptDefaults = prompts || {};
+  loadPromptIntoEditor(sel.value);
+
+  sel.addEventListener('change', () => {
+    stashCurrentPrompt();            // stash the prompt we're leaving (currentPromptId)
+    loadPromptIntoEditor(sel.value); // then switch to the newly selected one
+  });
+  el('vc-prompt-reset')?.addEventListener('click', () => {
+    delete promptOverrides[currentPromptId];
+    const textarea = el('vc-prompt-text');
+    if (textarea) textarea.value = defaultPrompt(currentPromptId);
+  });
 }
 
 // ── Bank ──────────────────────────────────────────────────────────────────────
@@ -205,10 +263,19 @@ async function handleSynthesize() {
   const output = el('vc-output');
   const exportRow = el('vc-export-row');
   output.classList.remove('hidden');
-  output.textContent = 'Running synthesis… (this may take 30–60 seconds)';
   exportRow.classList.add('hidden');
 
-  const result = await msg('SYNTHESIZE_REQUESTED');
+  const startedAt = Date.now();
+  const tick = () => { output.textContent = `Running synthesis… ${Math.round((Date.now() - startedAt) / 1000)}s elapsed`; };
+  tick();
+  const ticker = setInterval(tick, 1000);
+
+  let result;
+  try {
+    result = await msg('SYNTHESIZE_REQUESTED');
+  } finally {
+    clearInterval(ticker);
+  }
 
   if (result.error) {
     output.textContent = 'Error: ' + result.error;
@@ -326,7 +393,7 @@ function parseBuildTheseFirst(markdown) {
 }
 
 let blogTopics = [];
-let lastBlogMarkdown = '';
+let lastBlogPost = null;
 
 async function initBlogTab() {
   const { topics } = await msg('GET_BLOG_TOPICS');
@@ -365,28 +432,47 @@ function renderBlogList() {
 
 async function handleGeneratePost(question, btn) {
   const outputWrap = el('vc-blog-output-wrap');
-  const output = el('vc-blog-output');
+  const status = el('vc-blog-status');
+  const fields = el('vc-blog-fields');
   const allBtns = document.querySelectorAll('.vc-blog-generate-btn');
 
   btn.textContent = 'Writing…';
   allBtns.forEach(b => b.disabled = true);
   outputWrap.classList.remove('hidden');
-  output.textContent = 'Generating blog post… (this may take 30–60 seconds)';
+  fields.classList.add('hidden');
 
-  const result = await msg('GENERATE_BLOG_POST', { question });
+  const startedAt = Date.now();
+  const tick = () => { status.textContent = `Generating blog post… ${Math.round((Date.now() - startedAt) / 1000)}s elapsed`; };
+  tick();
+  const ticker = setInterval(tick, 1000);
+
+  let result;
+  try {
+    result = await msg('GENERATE_BLOG_POST', { question });
+  } finally {
+    clearInterval(ticker);
+  }
 
   btn.textContent = 'Generate post';
   allBtns.forEach(b => b.disabled = false);
 
   if (result.error) {
-    output.textContent = 'Error: ' + result.error;
+    status.textContent = 'Error: ' + result.error;
     return;
   }
 
-  lastBlogMarkdown = result.markdown;
-  output.textContent = result.markdown;
-  el('vc-blog-copy-btn').onclick = () => navigator.clipboard.writeText(lastBlogMarkdown);
-  el('vc-blog-pdf-btn').onclick = () => exportPdf(lastBlogMarkdown);
+  lastBlogPost = result.post;
+  status.textContent = '';
+  el('vc-blog-title').textContent = lastBlogPost.title;
+  el('vc-blog-excerpt').textContent = lastBlogPost.excerpt;
+  el('vc-blog-meta').textContent = lastBlogPost.metaDescription;
+  el('vc-blog-content').textContent = lastBlogPost.contentHtml;
+  fields.classList.remove('hidden');
+
+  // Each field copies its own plain value (HTML body copies the raw markup).
+  fields.querySelectorAll('.vc-blog-copy').forEach(b => {
+    b.onclick = () => navigator.clipboard.writeText(lastBlogPost[b.dataset.copy] || '');
+  });
 }
 
 // ── PDF export ────────────────────────────────────────────────────────────────
@@ -528,6 +614,7 @@ async function init() {
   initProviderToggle();
 
   await loadSettings();
+  await initPromptEditor();
   await refreshBank();
   await initBlogTab();
 

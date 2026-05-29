@@ -65,7 +65,7 @@ async function handleMessage(message, sender) {
       const rawText = typeof content === 'string' ? content
         : content.text || [content.title, content.body, ...(content.comments || [])].join('\n');
 
-      const prompt = assemblePrompt(source, rawText, settings.icp || {});
+      const prompt = assemblePrompt(source, rawText, settings.icp || {}, settings.prompts?.[source]);
       if (!prompt) return { error: `Source "${source}" not supported.` };
 
       const questions = await extractQuestions(prompt, settings);
@@ -87,7 +87,7 @@ async function handleMessage(message, sender) {
       }
 
       const questionTexts = allQuestions.map(q => q.text);
-      const prompt = assembleMasterPrompt(questionTexts, settings.icp || {});
+      const prompt = assembleMasterPrompt(questionTexts, settings.icp || {}, settings.prompts?.master);
       const markdown = await synthesize(prompt, settings);
 
       return { markdown };
@@ -95,6 +95,9 @@ async function handleMessage(message, sender) {
 
     case 'GET_SETTINGS':
       return getSettings();
+
+    case 'GET_DEFAULT_PROMPTS':
+      return { prompts: DEFAULT_PROMPTS };
 
     case 'SAVE_SETTINGS': {
       await chrome.storage.local.set({ [SETTINGS_KEY]: message.settings });
@@ -132,7 +135,7 @@ async function handleMessage(message, sender) {
       const lastSynthesis = stored[LAST_SYNTHESIS_KEY] || '';
 
       const questionTexts = allQuestions.map(q => q.text);
-      const prompt = assembleSuggestionsPrompt(questionTexts, settings.icp || {}, lastSynthesis);
+      const prompt = assembleSuggestionsPrompt(questionTexts, settings.icp || {}, lastSynthesis, settings.prompts?.suggestions);
       const text = await synthesize(prompt, settings);
       const suggestions = parseSuggestions(text);
 
@@ -153,15 +156,12 @@ async function handleMessage(message, sender) {
       if (!message.question) return { error: 'No question provided.' };
 
       const settings = await getSettings();
-      const hasKey = settings.provider === 'openai' ? settings.openaiApiKey : settings.apiKey;
-      if (!hasKey) {
-        const which = settings.provider === 'openai' ? 'OpenAI' : 'Claude';
-        return { error: `No ${which} API key set.` };
-      }
+      const keyErr = missingKeyError(settings);
+      if (keyErr) return { error: keyErr };
 
-      const prompt = assembleBlogPrompt(message.question, settings.icp || {});
-      const markdown = await synthesize(prompt, settings);
-      return { markdown };
+      const prompt = assembleBlogPrompt(message.question, settings.icp || {}, settings.prompts?.blog, settings.prompts?.['blog-guidelines']);
+      const raw = await synthesize(prompt, settings);
+      return { post: parseBlogPost(raw) };
     }
 
     default:

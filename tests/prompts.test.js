@@ -1,4 +1,4 @@
-const { assemblePrompt, assembleMasterPrompt, formatIcp, assembleSuggestionsPrompt, parseSuggestions, parseBuildTheseFirst, assembleBlogPrompt } = require('../src/prompts');
+const { assemblePrompt, assembleMasterPrompt, formatIcp, assembleSuggestionsPrompt, parseSuggestions, parseBuildTheseFirst, assembleBlogPrompt, parseBlogPost } = require('../src/prompts');
 
 const icp = {
   product: 'Rolliance',
@@ -236,4 +236,84 @@ test('formatIcp produces a non-empty string with all ICP fields', () => {
   expect(formatted).toContain('MindBody');
   expect(typeof formatted).toBe('string');
   expect(formatted.length).toBeGreaterThan(0);
+});
+
+// ── Template overrides (editable prompts) ────────────────────────────────────
+
+test('assembleMasterPrompt uses a custom template override when provided', () => {
+  const out = assembleMasterPrompt(['Q1?'], icp, 'CUSTOM ICP={{ICP}} Q={{QUESTIONS}}');
+  expect(out).toContain('CUSTOM');
+  expect(out).toContain('Q1?');
+  expect(out).toContain('Rolliance');
+  expect(out).not.toContain('Buyer-Question Map'); // default master template not used
+});
+
+test('assemblePrompt uses a custom override template for the source', () => {
+  const out = assemblePrompt('reddit', 'CONTENT_X', icp, 'OVERRIDE {{CONTENT}}');
+  expect(out).toBe('OVERRIDE CONTENT_X');
+});
+
+test('assembleBlogPrompt uses a custom override template', () => {
+  const out = assembleBlogPrompt('Why switch?', icp, 'BLOG Q={{QUESTION}} ICP={{ICP}}');
+  expect(out).toContain('BLOG Q=Why switch?');
+  expect(out).toContain('Rolliance');
+});
+
+test('assembleSuggestionsPrompt uses a custom override template', () => {
+  const out = assembleSuggestionsPrompt(['Q1?'], icp, '', 'SUGG ICP={{ICP}} Q={{QUESTIONS}}');
+  expect(out).toContain('SUGG');
+  expect(out).toContain('Q1?');
+  expect(out).toContain('Rolliance');
+});
+
+test('an empty override falls back to the default template', () => {
+  const out = assembleMasterPrompt(['Q1?'], icp, '');
+  expect(out).toContain('Buyer-Question Map');
+});
+
+test('question text containing a dollar sign is preserved verbatim', () => {
+  const out = assembleMasterPrompt(['Is it really $99/month?'], icp);
+  expect(out).toContain('$99/month');
+});
+
+// ── Blog guidelines + structured output ──────────────────────────────────────
+
+test('assembleBlogPrompt injects custom guidelines', () => {
+  const out = assembleBlogPrompt('Why switch?', icp, undefined, 'RULE: never use the word synergy.');
+  expect(out).toContain('RULE: never use the word synergy.');
+});
+
+test('assembleBlogPrompt uses default guidelines (which forbid em dashes) when none given', () => {
+  const out = assembleBlogPrompt('Why switch?', icp);
+  expect(out.toLowerCase()).toContain('dash');
+});
+
+const SAMPLE_BLOG_OUTPUT = `TITLE: How to Choose Studio Software
+EXCERPT: A short guide for studio owners weighing their options.
+META_DESCRIPTION: Compare studio management tools and pick the right one for your gym.
+CONTENT_HTML:
+<h2>Getting started</h2>
+<p>Running a studio is hard.</p>
+<ul><li>Track attendance</li></ul>`;
+
+test('parseBlogPost extracts plain-text title, excerpt, and meta description', () => {
+  const post = parseBlogPost(SAMPLE_BLOG_OUTPUT);
+  expect(post.title).toBe('How to Choose Studio Software');
+  expect(post.excerpt).toBe('A short guide for studio owners weighing their options.');
+  expect(post.metaDescription).toBe('Compare studio management tools and pick the right one for your gym.');
+});
+
+test('parseBlogPost returns the body as HTML, preserving tags across multiple lines', () => {
+  const post = parseBlogPost(SAMPLE_BLOG_OUTPUT);
+  expect(post.contentHtml).toContain('<h2>Getting started</h2>');
+  expect(post.contentHtml).toContain('<p>Running a studio is hard.</p>');
+  expect(post.contentHtml).toContain('<li>Track attendance</li>');
+  expect(post.contentHtml).not.toContain('TITLE:');
+  expect(post.contentHtml).not.toContain('META_DESCRIPTION:');
+});
+
+test('parseBlogPost falls back to treating unlabeled output as the HTML body so content is never lost', () => {
+  const post = parseBlogPost('<p>Model ignored the format.</p>');
+  expect(post.title).toBe('');
+  expect(post.contentHtml).toBe('<p>Model ignored the format.</p>');
 });
